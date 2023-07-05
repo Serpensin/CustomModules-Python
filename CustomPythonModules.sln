@@ -15,6 +15,13 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Twitch", "Twitch\Twitch.pyp
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "RandomUsernames", "RandomUsernames\RandomUsernames.pyproj", "{42843236-4E5A-419E-B2A6-4C5901316185}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{839D988B-52C8-45EC-832C-9E09880C78A1}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE.txt = LICENSE.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
