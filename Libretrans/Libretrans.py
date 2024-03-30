@@ -34,12 +34,12 @@ class LibreTranslateAPI:
     async def detect(self, text):
         """
         Detects the language of the given text.
-        
+
         Parameters
         ----------
         text : str
             The text to detect the language of.
-        
+
         Returns
         -------
         dict
@@ -102,7 +102,7 @@ class LibreTranslateAPI:
     async def check_status(self):
         """
         Checks the status of the API.
-        
+
         Returns
         -------
         bool
@@ -118,3 +118,5 @@ class LibreTranslateAPI:
 
 
 
+if __name__ == '__main__':
+    print('This is a module for the LibreTranslate API wrapper.')

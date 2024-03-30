@@ -2,15 +2,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>fca329d2-57fc-4ebb-a686-2bcb4ad79cd7</ProjectGuid>
+    <ProjectGuid>6e4e49fe-0580-45ed-9a9c-678f45492b5a</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>SteamCharts.py</StartupFile>
+    <StartupFile>BotDirectory.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>SteamCharts</Name>
-    <RootNamespace>SteamCharts</RootNamespace>
+    <Name>BotDirectory</Name>
+    <RootNamespace>BotDirectory</RootNamespace>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -22,10 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="SteamCharts.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="requirements.txt" />
+    <Compile Include="BotDirectory.py" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
@@ -37,6 +34,9 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -75,11 +75,11 @@ nouns = ['abalone', 'alpaca', 'anchovy', 'anemone', 'antelope', 'apples', 'apric
 def generate_username(num_results: int=1, include_numbers: bool=True):
     """
     Generates a random username from a list of adjectives and nouns.
-    
+
     Args:
         num_results (int): The number of usernames to generate. Defaults to 1.
         include_numbers (bool): Whether to include a random number at the end of the username. Defaults to True.
-    
+
     Returns:
         list: A list of usernames.
     """
@@ -92,8 +92,12 @@ def generate_username(num_results: int=1, include_numbers: bool=True):
             usernames.append(f"{adjective}{noun}{num}")
         else:
             usernames.append(f"{adjective}{noun}")
-    
+
     return usernames
 
 
 
+if __name__ == "__main__":
+    print(generate_username(num_results=5, include_numbers=False))
+    print(generate_username(num_results=5, include_numbers=True))
+    input("Press Enter to exit...")

@@ -5,11 +5,9 @@ VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SteamCharts", "SteamCharts\SteamCharts.pyproj", "{FCA329D2-57FC-4EBB-A686-2BCB4AD79CD7}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Killswitch", "Killswitch\Killswitch.pyproj", "{CDA325E1-A6BD-4F71-8FA3-FDF132FB7538}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DBD Killswitch", "Killswitch\DBD Killswitch.pyproj", "{CDA325E1-A6BD-4F71-8FA3-FDF132FB7538}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Libretrans", "Libretrans\Libretrans.pyproj", "{E87C1BDA-5C20-4893-8476-FD34A1EA9702}"
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Patchnotes", "Patchnotes\Patchnotes.pyproj", "{5EAA4044-16BA-4B9F-818B-433D2B86BDE4}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Twitch", "Twitch\Twitch.pyproj", "{4BF6A46D-7FDB-49BA-B2DF-D89F43D00989}"
 EndProject
@@ -21,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 		.gitignore = .gitignore
 		LICENSE.txt = LICENSE.txt
 	EndProjectSection
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BotDirectory", "BotDirectory\BotDirectory.pyproj", "{6E4E49FE-0580-45ED-9A9C-678F45492B5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,12 +34,12 @@ Global
 		{CDA325E1-A6BD-4F71-8FA3-FDF132FB7538}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E87C1BDA-5C20-4893-8476-FD34A1EA9702}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E87C1BDA-5C20-4893-8476-FD34A1EA9702}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5EAA4044-16BA-4B9F-818B-433D2B86BDE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5EAA4044-16BA-4B9F-818B-433D2B86BDE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BF6A46D-7FDB-49BA-B2DF-D89F43D00989}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4BF6A46D-7FDB-49BA-B2DF-D89F43D00989}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42843236-4E5A-419E-B2A6-4C5901316185}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{42843236-4E5A-419E-B2A6-4C5901316185}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E4E49FE-0580-45ED-9A9C-678F45492B5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E4E49FE-0580-45ED-9A9C-678F45492B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

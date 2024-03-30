@@ -7,17 +7,17 @@ from bs4 import BeautifulSoup
 async def get_killswitch(return_type='html'):
     """
     Gets the current Kill Switch status from the official Dead by Daylight website.
-    
+
     Parameters
     ----------
     return_type : str, optional
         The format to return the data in. Can be either 'html' or 'md'. Defaults to 'html'.
-    
+
     Returns
     -------
     str
         The Kill Switch status in the requested format.
-    
+
     Raises
     ------
     ValueError

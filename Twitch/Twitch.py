@@ -6,14 +6,14 @@ import requests as r
 class TwitchAPI:
     """
     Twitch API wrapper class
-    
+
     Attributes
     ----------
     client_id : str
         Twitch API client ID
     client_secret : str
         Twitch API client secret
-    
+
     Methods
     -------
     get_twitch_app_access_token()
@@ -43,12 +43,12 @@ class TwitchAPI:
     def get_twitch_app_access_token(self):
         """
         Get access token for Twitch API
-        
+
         Returns
         -------
         str
             Access token
-        
+
         Returns
         -------
         int
@@ -72,7 +72,7 @@ class TwitchAPI:
     async def check_access_token(self):
         """
         Check if access token is valid
-        
+
         Returns
         -------
         bool
@@ -86,22 +86,22 @@ class TwitchAPI:
                     return True
                 else:
                     return False
-    
+
 
     async def get_game_id(self, game_name):
         """
         Get game ID for game name
-        
+
         Parameters
         ----------
         game_name : str
             Game name
-        
+
         Returns
         -------
         str
             Game ID
-        
+
         Returns
         -------
         str
@@ -128,12 +128,12 @@ class TwitchAPI:
     async def get_category_stats(self, category_id):
         """
         Get stats for category ID
-        
+
         Parameters
         ----------
         category_id : str
             Category ID
-        
+
         Returns
         -------
         dict
@@ -141,22 +141,22 @@ class TwitchAPI:
         """
         headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
         params = {"game_id": category_id}
-    
+
         total_viewer_count = 0
         total_stream_count = 0
         average_viewer_count = 0
         category_rank = 0
-    
+
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.streams, params=params) as response:
                 if response.status != 200:
                     return None
                 data = await response.json()
-    
+
                 for stream in data["data"]:
                     total_viewer_count += stream["viewer_count"]
                     total_stream_count += 1
-    
+
                 while "cursor" in data.get("pagination", {}):
                     params["after"] = data["pagination"]["cursor"]
                     async with session.get(self.streams, params=params) as response:
@@ -164,40 +164,40 @@ class TwitchAPI:
                         for stream in data["data"]:
                             total_viewer_count += stream["viewer_count"]
                             total_stream_count += 1
-    
+
         if total_stream_count > 0:
             average_viewer_count = total_viewer_count / total_stream_count
-    
+
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.top, params={"first": "100"}) as response:
                 if response.status != 200:
                     return response.status
                 data = await response.json()
-    
+
                 for i, category in enumerate(data["data"]):
                     if category["id"] == category_id:
                         category_rank = i + 1
                         break
-    
+
         response_obj = {
             "viewer_count": total_viewer_count,
             "stream_count": total_stream_count,
             "average_viewer_count": average_viewer_count,
             "category_rank": category_rank
         }
-    
+
         return response_obj
 
 
     async def get_top_streamers(self, category_id):
         """
         Get top streamers for category ID
-        
+
         Parameters
         ----------
         category_id : str
             Category ID
-        
+
         Returns
         -------
         dict
@@ -205,7 +205,7 @@ class TwitchAPI:
         """
         headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
         params = {"game_id": category_id, "first": "4"}
-        
+
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.streams, params=params) as response:
                 if response.status == 200:
@@ -236,14 +236,14 @@ class TwitchAPI:
     async def get_api_points(self):
         """
         Get API points remaining
-        
+
         Returns
         -------
         int
             API points remaining
         """
         headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
-        
+
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.users) as response:
                 api_points = int(response.headers.get("Ratelimit-Remaining"))
@@ -253,12 +253,12 @@ class TwitchAPI:
     async def get_category_image(self, category_id):
         """
         Get image for category ID
-        
+
         Parameters
         ----------
         category_id : str
             Category ID
-        
+
         Returns
         -------
         str
@@ -267,7 +267,7 @@ class TwitchAPI:
         headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
         params = {"id": category_id}
         url = f"https://api.twitch.tv/helix/games?id={category_id}"
-        
+
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(url, params=params) as response:
                 if response.status == 200:
@@ -277,3 +277,7 @@ class TwitchAPI:
                 else:
                     return f"Error {response.status}: Could not retrieve image for category {category_id}"
 
+
+
+if __name__ == "__main__":
+    print("This is a library and should not be executed directly.")

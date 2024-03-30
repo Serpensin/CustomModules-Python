@@ -7,12 +7,12 @@ from bs4 import BeautifulSoup
 async def playercount(gameid):
     """
     Gets the current player count of the given game.
-    
+
     Parameters
     ----------
     gameid : int
         The Steam ID of the game.
-    
+
     Returns
     -------
     dict
@@ -33,7 +33,7 @@ async def playercount(gameid):
             if response.status != 200:
                 return{"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
             html = await response.text()
-        
+
     soup = BeautifulSoup(html, 'html.parser')
     data = {}
     count = 0
@@ -49,3 +49,17 @@ async def playercount(gameid):
                 data['Peak Players All Time'] = stat
             count += 1
     return data
+
+
+
+if __name__ == '__main__':
+    import asyncio
+    input_id = input('Enter the Steam ID of the game: ')
+    data = asyncio.run(playercount(input_id))
+    if 'error' in data:
+        print(f'Error: {data["error"]["message"]}')
+    else:
+        print(f'Current Players: {data["Current Players"]}')
+        print(f'Peak Players 24h: {data["Peak Players 24h"]}')
+        print(f'Peak Players All Time: {data["Peak Players All Time"]}')
+        input('Press enter to exit...')
