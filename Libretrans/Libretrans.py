@@ -65,8 +65,11 @@ class LibreTranslateAPI:
             return None
 
     async def validate_key(self) -> bool:
-        data = await self.detect("Hello")
-        return data["status"] == 200
+        try:
+            data = await self.detect("Hello")
+            return data["status"] == 200
+        except Exception:
+            return False
 
 
 
