@@ -4,7 +4,7 @@ import asyncio
 
 
 class Stats():
-    def __init__(self, bot, logger, TOPGG_TOKEN, DISCORDBOTS_TOKEN, DISCORDBOTLISTCOM_TOKEN, DISCORDLIST_TOKEN, DISCORDS_TOKEN):
+    def __init__(self, bot, logger = None, TOPGG_TOKEN: str = '', DISCORDBOTS_TOKEN: str = '', DISCORDBOTLISTCOM_TOKEN: str = '', DISCORDLIST_TOKEN: str = ''):
         """Initialize the Stats class.
 
         Args:
@@ -23,7 +23,6 @@ class Stats():
         self.DISCORDBOTS_TOKEN = DISCORDBOTS_TOKEN
         self.DISCORDBOTLISTCOM_TOKEN = DISCORDBOTLISTCOM_TOKEN
         self.DISCORDLIST_TOKEN = DISCORDLIST_TOKEN
-        self.DISCORDS_TOKEN = DISCORDS_TOKEN
 
     async def _topgg(self):
         if not self.TOPGG_TOKEN:
@@ -34,8 +33,8 @@ class Stats():
         }
         while True:
             async with aiohttp.ClientSession() as session:
-                async with session.post(f'https://top.gg/api/bots/{self.bot.user.id}/stats', headers=headers, json={'server_count': len(self.bot.guilds), 'shard_count': len(bot.shards)}) as resp:
-                    if resp.status != 200:
+                async with session.post(f'https://top.gg/api/bots/{self.bot.user.id}/stats', headers=headers, json={'server_count': len(self.bot.guilds), 'shard_count': len(self.bot.shards)}) as resp:
+                    if resp.status != 200 and self.logger is not None:
                         self.logger.error(f'Failed to update top.gg: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
@@ -51,8 +50,8 @@ class Stats():
         }
         while True:
             async with aiohttp.ClientSession() as session:
-                async with session.post(f'https://discord.bots.gg/api/v1/bots/{self.bot.user.id}/stats', headers=headers, json={'guildCount': len(self.bot.guilds), 'shardCount': len(bot.shards)}) as resp:
-                    if resp.status != 200:
+                async with session.post(f'https://discord.bots.gg/api/v1/bots/{self.bot.user.id}/stats', headers=headers, json={'guildCount': len(self.bot.guilds), 'shardCount': len(self.bot.shards)}) as resp:
+                    if resp.status != 200 and self.logger is not None:
                         self.logger.error(f'Failed to update discord.bots.gg: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
@@ -68,8 +67,8 @@ class Stats():
         }
         while True:
             async with aiohttp.ClientSession() as session:
-                async with session.post(f'https://discordbotlist.com/api/v1/bots/{self.bot.user.id}/stats', headers=headers, json={'guilds': len(self.bot.guilds), 'users': sum(guild.member_count for guild in bot.guilds)}) as resp:
-                    if resp.status != 200:
+                async with session.post(f'https://discordbotlist.com/api/v1/bots/{self.bot.user.id}/stats', headers=headers, json={'guilds': len(self.bot.guilds), 'users': sum(guild.member_count for guild in self.bot.guilds)}) as resp:
+                    if resp.status != 200 and self.logger is not None:
                         self.logger.error(f'Failed to update discordbotlist.com: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
@@ -86,25 +85,8 @@ class Stats():
         while True:
             async with aiohttp.ClientSession() as session:
                 async with session.post(f'https://api.discordlist.gg/v0/bots/{self.bot.user.id}/guilds', headers=headers, json={"count": len(self.bot.guilds)}) as resp:
-                    if resp.status != 200:
+                    if resp.status != 200 and self.logger is not None:
                         self.logger.error(f'Failed to update discordlist.gg: {resp.status} {resp.reason}')
-            try:
-                await asyncio.sleep(60*30)
-            except asyncio.CancelledError:
-                break
-
-    async def _discords(self):
-        if not self.DISCORDS_TOKEN:
-            return
-        headers = {
-            'Authorization': self.DISCORDS_TOKEN,
-            'Content-Type': 'application/json'
-        }
-        while True:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(f'https://discords.com/bots/api/bot/{self.bot.user.id}', headers=headers, json={"server_count": len(self.bot.guilds)}) as resp:
-                    if resp.status != 200:
-                        self.logger.error(f'Failed to update discords.com: {resp.status} {resp.reason}')
             try:
                 await asyncio.sleep(60*30)
             except asyncio.CancelledError:
@@ -115,8 +97,7 @@ class Stats():
         updates = [self._topgg(),
                    self._discordbots(),
                    self._discordbotlist_com(),
-                   self._discordlist(),
-                   self._discords()
+                   self._discordlist()
                    ]
 
         tasks = [asyncio.create_task(update) for update in updates]
@@ -135,4 +116,4 @@ class Stats():
 
 
 if __name__ == '__main__':
-    print('This file is not meant to be run directly.')
+    print('This is a module. Do not run it directly.')

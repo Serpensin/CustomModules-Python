@@ -4,16 +4,6 @@ import aiohttp
 
 
 class LibreTranslateAPI:
-    """
-    A wrapper for the LibreTranslate API.
-
-    Parameters
-    ----------
-    APIkey : str
-        The API key to use for the API.
-    url : str
-        The URL of the API.
-    """
     def __init__(self, APIkey, url):
         self.APIkey = APIkey
         self.url = url
@@ -30,24 +20,7 @@ class LibreTranslateAPI:
 
         return sample
 
-
     async def detect(self, text):
-        """
-        Detects the language of the given text.
-
-        Parameters
-        ----------
-        text : str
-            The text to detect the language of.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the status code and the data.
-        200: The request was successful.
-        400: The request was invalid.
-        500: The server encountered an error.
-        """
         url = f"{self.url}/detect"
         params = {
             "q": text,
@@ -58,28 +31,7 @@ class LibreTranslateAPI:
                 data = await response.json()
                 return {"status": response.status, "data": data}
 
-
     async def translate(self, text, dest_lang, source = ''):
-        """
-        Translates the given text to the given language.
-
-        Parameters
-        ----------
-        text : str
-            The text to translate.
-        dest_lang : str
-            The language to translate the text to.
-        source : str, optional
-            The language of the text. If not given, it will be detected automatically.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the status code and the data.
-        200: The request was successful.
-        400: The request was invalid.
-        500: The server encountered an error.
-        """
         url = f'{self.url}/translate'
         if source == '':
             source = await self.detect(await self._get_sample(text))
@@ -98,16 +50,7 @@ class LibreTranslateAPI:
         except:
             return {"status": 500, "data": None}
 
-
-    async def check_status(self):
-        """
-        Checks the status of the API.
-
-        Returns
-        -------
-        bool
-            Whether the API is online or not.
-        """
+    async def get_settings(self):
         url = f'{self.url}/frontend/settings'
         try:
             async with aiohttp.ClientSession() as session:
@@ -115,6 +58,13 @@ class LibreTranslateAPI:
                     return response.status == 200
         except:
             return False
+
+    async def validate_key(self):
+        data = await self.detect("Hello")
+        return data["status"] == 200
+
+
+
 
 
 

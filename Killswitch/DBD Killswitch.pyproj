@@ -13,6 +13,7 @@
     <Name>DBD Killswitch</Name>
     <RootNamespace>Killswitch</RootNamespace>
     <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
