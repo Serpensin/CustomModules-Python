@@ -2,7 +2,6 @@ import aiohttp
 
 
 
-
 class LibreTranslateAPI:
     def __init__(self, APIkey, url):
         self.APIkey = APIkey
@@ -26,16 +25,22 @@ class LibreTranslateAPI:
             "q": text,
             "api_key": self.APIkey
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, params=params) as response:
-                data = await response.json()
-                return {"status": response.status, "data": data}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, params=params) as response:
+                    data = await response.json()
+                    return {"status": response.status, "data": data}
+        except:
+            raise Exception("An error occurred while trying to connect to the LibreTranslate API.")
 
-    async def translate(self, text, dest_lang, source = ''):
+    async def translate(self, text, dest_lang, source = '') -> str:
         url = f'{self.url}/translate'
         if source == '':
-            source = await self.detect(await self._get_sample(text))
-            source = source["data"][0]["language"]
+            try:
+                source = await self.detect(await self._get_sample(text))
+                source = source["data"][0]["language"]
+            except:
+                raise Exception("An error occurred while trying to detect the language of the text.")
         params = {
             "q": text,
             "source": source,
@@ -46,20 +51,20 @@ class LibreTranslateAPI:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, params=params) as response:
                     data = await response.json()
-                    return {"status": response.status, "data": data}
+                    return data['translatedText']
         except:
-            return {"status": 500, "data": None}
+            raise Exception("An error occurred while trying to connect to the LibreTranslate API.")
 
     async def get_settings(self):
         url = f'{self.url}/frontend/settings'
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
-                    return response.status == 200
+                    return await response.json()
         except:
-            return False
+            return None
 
-    async def validate_key(self):
+    async def validate_key(self) -> bool:
         data = await self.detect("Hello")
         return data["status"] == 200
 

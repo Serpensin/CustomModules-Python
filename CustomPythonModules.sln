@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BotDirectory", "BotDirectory\BotDirectory.pyproj", "{6E4E49FE-0580-45ED-9A9C-678F45492B5A}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Googletrans", "Googletrans\Googletrans.pyproj", "{3FC00FC2-D517-48BB-9F80-69CA26702D3A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,8 @@ Global
 		{42843236-4E5A-419E-B2A6-4C5901316185}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E4E49FE-0580-45ED-9A9C-678F45492B5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6E4E49FE-0580-45ED-9A9C-678F45492B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FC00FC2-D517-48BB-9F80-69CA26702D3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FC00FC2-D517-48BB-9F80-69CA26702D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
