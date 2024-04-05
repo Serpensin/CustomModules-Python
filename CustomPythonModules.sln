@@ -26,6 +26,10 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Googletrans", "Googletrans\
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Steam", "Steam\Steam.pyproj", "{8911FACA-6F38-4FB4-9686-5F1D41CEE834}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "InviteTracker", "InviteTracker\InviteTracker.pyproj", "{02BD8A0D-6763-4EFC-893B-3E04D35E8688}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "AppTranslation", "AppTranslation\AppTranslation.pyproj", "{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +52,10 @@ Global
 		{3FC00FC2-D517-48BB-9F80-69CA26702D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8911FACA-6F38-4FB4-9686-5F1D41CEE834}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8911FACA-6F38-4FB4-9686-5F1D41CEE834}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02BD8A0D-6763-4EFC-893B-3E04D35E8688}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02BD8A0D-6763-4EFC-893B-3E04D35E8688}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
