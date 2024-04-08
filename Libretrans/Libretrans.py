@@ -48,7 +48,10 @@ class API:
             Errors.InvalidAPIKey: If the provided API key is invalid.
         """
         self.APIkey = APIkey
-        self.url = url.rstrip('/')
+        try:
+            self.url = url.rstrip('/')
+        except AttributeError:
+            raise ValueError("Invalid URL provided.")
 
         isValid = asyncio.run(self.validate_key())
         if not isValid:
