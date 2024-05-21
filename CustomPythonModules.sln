@@ -30,6 +30,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "InviteTracker", "InviteTrac
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "AppTranslation", "AppTranslation\AppTranslation.pyproj", "{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "LogHandler", "LogHandler\LogHandler.pyproj", "{3534C9F3-C406-4D96-A9FF-4EAED0C19AE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,8 @@ Global
 		{02BD8A0D-6763-4EFC-893B-3E04D35E8688}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EFC198A7-04E2-4F4F-B831-03B473B9DA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3534C9F3-C406-4D96-A9FF-4EAED0C19AE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3534C9F3-C406-4D96-A9FF-4EAED0C19AE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
