@@ -13,9 +13,9 @@ class LogManager:
         app_folder_name (str): The name of the application, used for naming the log file.
         log_level (int): The logging level (e.g., logging.INFO).
     """
-    def __init__(self, log_folder, log_file_name, log_level='INFO'):
+    def __init__(self, log_folder, app_folder_name, log_level='INFO'):
         """
-        Initializes the LogManager with the specified log folder, log file name, and log level.
+        Initializes the LogManager with the specified log folder, application folder name, and log level.
 
         Args:
             log_folder (str): The folder to store log files.
@@ -24,8 +24,11 @@ class LogManager:
         """
         init()  # Initialize colorama for colored console output.
         self.log_folder = log_folder
-        self.app_folder_name = log_file_name
-        self.log_level = self._get_log_level(log_level)
+        self.app_folder_name = app_folder_name
+        try:
+            self.log_level = self._get_log_level(log_level)
+        except:
+            self.log_level = logging.INFO
     
     def _get_log_level(self, log_level_str):
         """
@@ -38,9 +41,13 @@ class LogManager:
             int: The logging level.
 
         Raises:
+            AttributeError: If the log level string is empty.
             ValueError: If the log level string is invalid.
         """
-        level = logging.getLevelName(log_level_str.upper())
+        try:
+            level = logging.getLevelName(log_level_str.upper())
+        except AttributeError:
+            raise AttributeError(f"Invalid log level: {log_level_str}")
         if isinstance(level, int):
             return level
         else:
@@ -115,26 +122,3 @@ class ColoredFormatter(logging.Formatter):
         log_color = self.COLOR_MAP.get(record.levelname, Fore.WHITE)
         log_msg = super().format(record)
         return f"{log_color}{log_msg}{Style.RESET_ALL}"
-
-
-
-if __name__ == "__main__":
-    log_folder = 'LogHandler'
-    app_folder_name = 'Log'
-    log_level = 'DEBUG'  # Set the desired log level
-    
-    # Initialize LogManager
-    log_manager = LogManager(log_folder, app_folder_name, log_level)
-    
-    # Get loggers
-    program_logger = log_manager.get_logger('Program')
-    
-    # Set specific levels for other loggers if needed
-    logging.getLogger('discord.http').setLevel(logging.INFO)
-    
-    # Log an example message
-    program_logger.info('Engine powering up...')
-    program_logger.debug('Debug message for discord logger.')
-    program_logger.warning('This is a warning message.')
-    program_logger.error('This is an error message.')
-    program_logger.critical('This is a critical message.')
