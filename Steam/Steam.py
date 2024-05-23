@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+from bs4 import BeautifulSoup
 import http
 
 
@@ -199,6 +200,41 @@ class API():
 
 
 
+async def GetFreePromotions() -> list:
+    """
+    Fetches a list of free games currently on promotion from the Steam store.
+
+    This function makes an asynchronous HTTP GET request to the Steam store's search page,
+    looking for games that are both free and on special promotion. It then parses the HTML
+    response to extract the app IDs of the games.
+
+    Returns:
+        list: A list of app IDs of the free promotional games. If an error occurs, returns
+              a dictionary with an error code and message.
+
+    Example:
+        >>> import asyncio
+        >>> ids = asyncio.run(GetFreePromotions())
+        >>> print(ids)
+        ['12345', '67890', ...]
+    """
+    url = "https://store.steampowered.com/search/?maxprice=free&specials=1"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status != 200:
+                return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+            html = await response.text()
+            
+    soup = BeautifulSoup(html, 'html.parser')
+    ids = []
+    for game in soup.find_all('a', class_='search_result_row'):
+        app_id = game.get('data-ds-appid')
+        if app_id:
+            ids.append(app_id)
+    
+    return ids
+
+
 
 if __name__ == '__main__':
     try:
@@ -209,3 +245,4 @@ if __name__ == '__main__':
         print(asyncio.run(api.get_player_summeries('Schlangensuende, 76561197969978546')))
     except Errors.Private as e:
         print(e)
+    print(asyncio.run(GetFreePromotions()))
