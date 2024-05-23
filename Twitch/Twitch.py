@@ -160,10 +160,13 @@ class TwitchAPI:
                 while "cursor" in data.get("pagination", {}):
                     params["after"] = data["pagination"]["cursor"]
                     async with session.get(self.streams, params=params) as response:
-                        data = await response.json()
-                        for stream in data["data"]:
-                            total_viewer_count += stream["viewer_count"]
-                            total_stream_count += 1
+                        try:
+                            data = await response.json()
+                            for stream in data["data"]:
+                                total_viewer_count += stream["viewer_count"]
+                                total_stream_count += 1
+                        except aiohttp.client_exceptions.ContentTypeError:
+                            continue
 
         if total_stream_count > 0:
             average_viewer_count = total_viewer_count / total_stream_count
