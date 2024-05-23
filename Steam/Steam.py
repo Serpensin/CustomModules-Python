@@ -44,6 +44,7 @@ class API():
         self.URL_ResolveVanity = f'http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl='
         self.URL_GetPlayerAchievements = f'https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={key}&steamid='
         self.URL_GetPlayerSummeries = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={key}&steamids='
+        self.URL_GetAppDetails = 'https://store.steampowered.com/api/appdetails?appids='
 
         isValid = asyncio.run(self.keyIsValid())
         if not isValid:
@@ -197,6 +198,28 @@ class API():
             else:
                 return False
         return False
+    
+    async def get_app_details(self, appid) -> dict:
+        """
+        Get details of a specific app.
+
+        Args:
+            appid (int): App ID of the game.
+
+        Returns:
+            dict: App details.
+        Raises:
+            Errors.RateLimit: If the API rate limit is exceeded.
+        """
+        url = f'{self.URL_GetAppDetails}{appid}'
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 429:
+                    raise Errors.RateLimit()
+                elif response.status != 200:
+                    return{"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                data = await response.json()
+        return data
 
 
 
@@ -243,6 +266,7 @@ if __name__ == '__main__':
         print(e)
     try:
         print(asyncio.run(api.get_player_summeries('Schlangensuende, 76561197969978546')))
+        print(asyncio.run(api.get_app_details(570)))
     except Errors.Private as e:
         print(e)
     print(asyncio.run(GetFreePromotions()))
