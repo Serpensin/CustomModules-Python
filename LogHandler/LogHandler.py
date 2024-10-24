@@ -46,8 +46,8 @@ class LogManager:
         """
         try:
             level = logging.getLevelName(log_level_str.upper())
-        except AttributeError:
-            raise AttributeError(f"Invalid log level: {log_level_str}")
+        except AttributeError as e:
+            raise AttributeError(f"Invalid log level: {log_level_str}") from e
         if isinstance(level, int):
             return level
         else:
