@@ -2,8 +2,6 @@ import aiohttp
 import html2text
 from bs4 import BeautifulSoup
 
-
-
 async def get_killswitch(return_type='html'):
     """
     Gets the current Kill Switch status from the official Dead by Daylight website.
@@ -43,29 +41,28 @@ async def get_killswitch(return_type='html'):
             kill_switch_section = soup.find('h2', {'data-id': 'kill-switch-disabled'})
             known_issues_section = soup.find('h2', {'data-id': 'known-issues-not-disabled'})
 
+            if not kill_switch_section or not known_issues_section:
+                return None
+
             # Extract the content between the two sections
             content = []
-            current_section = kill_switch_section.find_next_sibling()
-            while current_section and current_section != known_issues_section:
+            for sibling in kill_switch_section.find_next_siblings():
+                if sibling == known_issues_section:
+                    break
                 # Remove any images
-                for img in current_section.find_all('img'):
+                for img in sibling.find_all('img'):
                     img.decompose()
-                content.append(str(current_section))
-                current_section = current_section.find_next_sibling()
+                content.append(str(sibling))
 
             # Convert the content to the required format
             content = '\n'.join(content)
             if not content:
                 return None
-            elif return_type == 'html':
+            if return_type == 'html':
                 return content
-            elif return_type == 'md':
-                return converter.handle(content)
+            return converter.handle(content)
 
     return None
-
-
-
 
 if __name__ == '__main__':
     import asyncio
