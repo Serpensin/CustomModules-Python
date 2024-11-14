@@ -1,35 +1,26 @@
 import aiohttp
 import asyncio
 
-
-
 class Errors:
     class InvalidAPIKey(Exception):
         def __init__(self, message="Invalid API key or URL."):
-            self.message = message
-            super().__init__(self.message)
+            super().__init__(message)
 
     class BadRequest(Exception):
         def __init__(self, message="Bad Request: The request was invalid."):
-            self.message = message
-            super().__init__(self.message)
+            super().__init__(message)
 
     class Forbidden(Exception):
         def __init__(self, message="Forbidden: The API key is invalid or the request is not authorized."):
-            self.message = message
-            super().__init__(self.message)
+            super().__init__(message)
 
     class RateLimitExceeded(Exception):
         def __init__(self, message="Rate Limit Exceeded: The request was rate limited."):
-            self.message = message
-            super().__init__(self.message)
+            super().__init__(message)
 
     class InternalServerError(Exception):
         def __init__(self, message="Internal Server Error: The server encountered an error."):
-            self.message = message
-            super().__init__(self.message)
-
-
+            super().__init__(message)
 
 class API:
     """
@@ -48,13 +39,8 @@ class API:
             Errors.InvalidAPIKey: If the provided API key is invalid.
         """
         self.APIkey = APIkey
-        try:
-            self.url = url.rstrip('/')
-        except AttributeError:
-            raise ValueError("Invalid URL provided.")
-
-        isValid = asyncio.run(self.validate_key())
-        if not isValid:
+        self.url = url.rstrip('/')
+        if not asyncio.run(self.validate_key()):
             raise Errors.InvalidAPIKey()
 
     def _get_sample(self, text, isFile=False) -> str:
@@ -73,12 +59,7 @@ class API:
                 text = file.read()
 
         first_words = text.split(' ')
-        if len(first_words) > 20:
-            sample = ' '.join(first_words[:20])
-        else:
-            sample = ' '.join(first_words)
-
-        return sample
+        return ' '.join(first_words[:20])
 
     async def detect(self, text) -> dict:
         """
@@ -97,10 +78,7 @@ class API:
             Errors.InternalServerError: If the server encountered an error.
         """
         url = f"{self.url}/detect"
-        params = {
-            "q": text,
-            "api_key": self.APIkey
-        }
+        params = {"q": text, "api_key": self.APIkey}
         async with aiohttp.ClientSession() as session:
             async with session.post(url, params=params) as response:
                 data = await response.json()
@@ -135,15 +113,9 @@ class API:
             Errors.InternalServerError: If the server encountered an error.
         """
         url = f'{self.url}/translate'
-        if source == '':
-            source = await self.detect(self._get_sample(text))
-            source = source["data"][0]["language"]
-        params = {
-            "q": text,
-            "source": source,
-            "target": dest_lang,
-            "api_key": self.APIkey
-        }
+        if not source:
+            source = (await self.detect(self._get_sample(text)))["data"][0]["language"]
+        params = {"q": text, "source": source, "target": dest_lang, "api_key": self.APIkey}
         async with aiohttp.ClientSession() as session:
             async with session.post(url, params=params) as response:
                 data = await response.json()
@@ -177,11 +149,7 @@ class API:
         Returns:
             bool: True if the API key is valid, False otherwise.
         """
-        data = await self.detect("Hello")
-        if data["status"] == 200:
-            return True
-        else:
-            return False
+        return (await self.detect("Hello"))["status"] == 200
 
     async def get_languages(self) -> list:
         """
@@ -191,12 +159,9 @@ class API:
             list: A list of supported languages.
         """
         url = f'{self.url}/languages'
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    return await response.json()
-        except:
-            return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
 
     async def translate_file(self, file, dest_lang, source='') -> str:
         """
@@ -217,17 +182,10 @@ class API:
             Errors.InternalServerError: If the server encountered an error.
         """
         url = f'{self.url}/translate_file'
-        if source == '':
-            source = await self.detect(self._get_sample(file, True))
-            source = source["data"][0]["language"]
-        params = {
-            "source": source,
-            "target": dest_lang,
-            "api_key": self.APIkey
-        }
-        files = {
-            "file": open(file, 'rb')
-        }
+        if not source:
+            source = (await self.detect(self._get_sample(file, True)))["data"][0]["language"]
+        params = {"source": source, "target": dest_lang, "api_key": self.APIkey}
+        files = {"file": open(file, 'rb')}
         async with aiohttp.ClientSession() as session:
             async with session.post(url, params=params, data=files) as response:
                 data = await response.json()
@@ -242,18 +200,11 @@ class API:
                 elif response.status == 500:
                     raise Errors.InternalServerError(data)
 
-
-
-
 if __name__ == '__main__':
     import os
     from dotenv import load_dotenv
     load_dotenv()
 
     translator = API(APIkey=os.getenv("libretransAPIkey"), url=os.getenv("libretransURL"))
-    # print(asyncio.run(translator.detect("Hello, how are you?")))
-    # print(asyncio.run(translator.translate("Hello, how are you?", 'de')))
-    # print(asyncio.run(translator.get_languages()))
-    # print(asyncio.run(translator.get_settings()))
-    ttt = asyncio.run(translator.translate_file('translation_test.txt', 'de'))
-    print(ttt)
+    print(asyncio.run(translator.translate("Hello, how are you?", 'de')))
+    print(asyncio.run(translator.translate_file('translation_test.txt', 'de')))
