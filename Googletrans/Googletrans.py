@@ -2,7 +2,6 @@ from google.auth.exceptions import RefreshError
 from google.cloud import translate_v2
 
 
-
 class API:
     """
     A class for interacting with the Google Cloud Translate API.
@@ -38,13 +37,7 @@ class API:
         Returns:
             str: The first 20 words or less of the input text.
         """
-        first_words = text.split(' ')
-        if len(first_words) > 20:
-            sample = ' '.join(first_words[:20])
-        else:
-            sample = ' '.join(first_words)
-
-        return sample
+        return ' '.join(text.split()[:20])
 
     def translate_text(self, text: str, target_language: str, source_language: str = "") -> str:
         """
@@ -97,8 +90,7 @@ class API:
             RefreshError: If there is an error refreshing credentials.
         """
         try:
-            languages = self.translate_client.get_languages()
-            return languages
+            return self.translate_client.get_languages()
         except (FileNotFoundError, RefreshError) as e:
             raise e
 
@@ -121,11 +113,6 @@ class API:
             return result["language"]
         except (FileNotFoundError, RefreshError) as e:
             raise e
-
-
-
-
-
 
 
 if __name__ == '__main__':
