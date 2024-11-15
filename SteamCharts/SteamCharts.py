@@ -2,8 +2,6 @@ import aiohttp
 import http
 from bs4 import BeautifulSoup
 
-
-
 async def playercount(gameid):
     """
     Gets the current player count of the given game.
@@ -31,26 +29,17 @@ async def playercount(gameid):
     async with aiohttp.ClientSession(headers=header) as session:
         async with session.get(url) as response:
             if response.status != 200:
-                return{"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
             html = await response.text()
 
     soup = BeautifulSoup(html, 'html.parser')
     data = {}
-    count = 0
-    for stats in soup.find_all('div', class_='app-stat'):
-        soup2 = BeautifulSoup(str(stats), 'html.parser')
-        for stat in soup2.find_all('span', class_='num'):
-            stat = str(stat).replace('<span class="num">', '').replace('</span>', '')
-            if count == 0:
-                data['Current Players'] = stat
-            elif count == 1:
-                data['Peak Players 24h'] = stat
-            elif count == 2:
-                data['Peak Players All Time'] = stat
-            count += 1
+    stats = soup.find_all('div', class_='app-stat')
+    if len(stats) >= 3:
+        data['Current Players'] = stats[0].find('span', class_='num').text
+        data['Peak Players 24h'] = stats[1].find('span', class_='num').text
+        data['Peak Players All Time'] = stats[2].find('span', class_='num').text
     return data
-
-
 
 if __name__ == '__main__':
     import asyncio
@@ -62,4 +51,3 @@ if __name__ == '__main__':
         print(f'Current Players: {data["Current Players"]}')
         print(f'Peak Players 24h: {data["Peak Players 24h"]}')
         print(f'Peak Players All Time: {data["Peak Players All Time"]}')
-        input('Press enter to exit...')
