@@ -84,11 +84,15 @@ def generate_username(num_results: int=1, include_numbers: bool=True):
         list: A list of usernames.
     """
     usernames = []
+    choice = random.choice
+    randint = random.randint
+    capitalize = str.capitalize
+
     for _ in range(num_results):
-        adjective = random.choice(adjectives)
-        noun = random.choice(nouns).capitalize()
-        num = random.randint(0, 9999)
+        adjective = choice(adjectives)
+        noun = capitalize(choice(nouns))
         if include_numbers:
+            num = randint(0, 9999)
             usernames.append(f"{adjective}{noun}{num}")
         else:
             usernames.append(f"{adjective}{noun}")
@@ -100,4 +104,3 @@ def generate_username(num_results: int=1, include_numbers: bool=True):
 if __name__ == "__main__":
     print(generate_username(num_results=5, include_numbers=False))
     print(generate_username(num_results=5, include_numbers=True))
-    input("Press Enter to exit...")
