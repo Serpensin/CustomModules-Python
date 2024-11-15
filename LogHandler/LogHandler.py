@@ -25,10 +25,7 @@ class LogManager:
         init()  # Initialize colorama for colored console output.
         self.log_folder = log_folder
         self.app_folder_name = app_folder_name
-        try:
-            self.log_level = self._get_log_level(log_level)
-        except:
-            self.log_level = logging.INFO
+        self.log_level = self._get_log_level(log_level)
     
     def _get_log_level(self, log_level_str):
         """
@@ -41,13 +38,9 @@ class LogManager:
             int: The logging level.
 
         Raises:
-            AttributeError: If the log level string is empty.
             ValueError: If the log level string is invalid.
         """
-        try:
-            level = logging.getLevelName(log_level_str.upper())
-        except AttributeError as e:
-            raise AttributeError(f"Invalid log level: {log_level_str}") from e
+        level = logging.getLevelName(log_level_str.upper())
         if isinstance(level, int):
             return level
         else:
@@ -85,7 +78,7 @@ class LogManager:
         file_handler.setFormatter(file_formatter)
         
         # Create a formatter for the console handler with color
-        color_formatter = ColoredFormatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        color_formatter = _ColoredFormatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         console_handler.setFormatter(color_formatter)
         
         # Add the handlers to the logger
@@ -95,7 +88,7 @@ class LogManager:
         return logger
 
 
-class ColoredFormatter(logging.Formatter):
+class _ColoredFormatter(logging.Formatter):
     """
     A logging formatter that adds color to log messages based on their severity level.
 
