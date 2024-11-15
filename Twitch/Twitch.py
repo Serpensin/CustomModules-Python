@@ -2,7 +2,6 @@ import aiohttp
 import requests as r
 
 
-
 class TwitchAPI:
     """
     Twitch API wrapper class
@@ -39,7 +38,6 @@ class TwitchAPI:
         self.users = "https://api.twitch.tv/helix/users"
         self.top = "https://api.twitch.tv/helix/games/top"
 
-
     def get_twitch_app_access_token(self):
         """
         Get access token for Twitch API
@@ -63,11 +61,8 @@ class TwitchAPI:
         response = r.post(url, params=params)
 
         if response.status_code == 200:
-            access_token = response.json()["access_token"]
-            return access_token
-        else:
-            return response.status_code
-
+            return response.json()["access_token"]
+        return response.status_code
 
     async def check_access_token(self):
         """
@@ -82,11 +77,7 @@ class TwitchAPI:
         url = "https://id.twitch.tv/oauth2/validate"
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    return True
-                else:
-                    return False
-
+                return response.status == 200
 
     async def get_game_id(self, game_name):
         """
@@ -116,14 +107,10 @@ class TwitchAPI:
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if len(data["data"]) > 0:
-                        game_id = data["data"][0]["id"]
-                        return game_id
-                    else:
-                        return f"No game found with name {game_name}"
-                else:
-                    return f"Failed to get game ID for {game_name} with status code {response.status}"
-
+                    if data["data"]:
+                        return data["data"][0]["id"]
+                    return f"No game found with name {game_name}"
+                return f"Failed to get game ID for {game_name} with status code {response.status}"
 
     async def get_category_stats(self, category_id):
         """
@@ -144,8 +131,6 @@ class TwitchAPI:
 
         total_viewer_count = 0
         total_stream_count = 0
-        average_viewer_count = 0
-        category_rank = 0
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.streams, params=params) as response:
@@ -160,16 +145,12 @@ class TwitchAPI:
                 while "cursor" in data.get("pagination", {}):
                     params["after"] = data["pagination"]["cursor"]
                     async with session.get(self.streams, params=params) as response:
-                        try:
-                            data = await response.json()
-                            for stream in data["data"]:
-                                total_viewer_count += stream["viewer_count"]
-                                total_stream_count += 1
-                        except aiohttp.client_exceptions.ContentTypeError:
-                            continue
+                        data = await response.json()
+                        for stream in data["data"]:
+                            total_viewer_count += stream["viewer_count"]
+                            total_stream_count += 1
 
-        if total_stream_count > 0:
-            average_viewer_count = total_viewer_count / total_stream_count
+        average_viewer_count = total_viewer_count / total_stream_count if total_stream_count > 0 else 0
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.top, params={"first": "100"}) as response:
@@ -177,20 +158,14 @@ class TwitchAPI:
                     return response.status
                 data = await response.json()
 
-                for i, category in enumerate(data["data"]):
-                    if category["id"] == category_id:
-                        category_rank = i + 1
-                        break
+                category_rank = next((i + 1 for i, category in enumerate(data["data"]) if category["id"] == category_id), 0)
 
-        response_obj = {
+        return {
             "viewer_count": total_viewer_count,
             "stream_count": total_stream_count,
             "average_viewer_count": average_viewer_count,
             "category_rank": category_rank
         }
-
-        return response_obj
-
 
     async def get_top_streamers(self, category_id):
         """
@@ -213,28 +188,20 @@ class TwitchAPI:
             async with session.get(self.streams, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    top_streamers = {}
-                    for i, stream in enumerate(data["data"]):
-                        streamer_name = stream["user_name"]
-                        viewer_count = stream["viewer_count"]
-                        follower_count = stream["user_id"]
-                        stream_title = stream["title"]
-                        started_at = stream["started_at"]
-                        language = stream["language"]
-                        thumbnail_url = stream["thumbnail_url"].format(width="1920", height="1080")
-                        link = f"https://www.twitch.tv/{streamer_name}"
-                        top_streamers[i] = {"streamer": streamer_name,
-                                              "viewer_count": viewer_count,
-                                              "follower_count": follower_count,
-                                              "title": stream_title,
-                                              "started_at": started_at,
-                                              "language": language,
-                                              "thumbnail": thumbnail_url,
-                                              "link": link}
-                    return top_streamers
-                else:
-                    return(f"Error {response.status}: Could not retrieve top streamers for category {category_id}")
-
+                    return {
+                        i: {
+                            "streamer": stream["user_name"],
+                            "viewer_count": stream["viewer_count"],
+                            "follower_count": stream["user_id"],
+                            "title": stream["title"],
+                            "started_at": stream["started_at"],
+                            "language": stream["language"],
+                            "thumbnail": stream["thumbnail_url"].format(width="1920", height="1080"),
+                            "link": f"https://www.twitch.tv/{stream['user_name']}"
+                        }
+                        for i, stream in enumerate(data["data"])
+                    }
+                return f"Error {response.status}: Could not retrieve top streamers for category {category_id}"
 
     async def get_api_points(self):
         """
@@ -249,9 +216,7 @@ class TwitchAPI:
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.users) as response:
-                api_points = int(response.headers.get("Ratelimit-Remaining"))
-                return api_points
-
+                return int(response.headers.get("Ratelimit-Remaining"))
 
     async def get_category_image(self, category_id):
         """
@@ -268,18 +233,14 @@ class TwitchAPI:
             Image URL for category ID
         """
         headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
-        params = {"id": category_id}
         url = f"https://api.twitch.tv/helix/games?id={category_id}"
 
         async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(url, params=params) as response:
+            async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    image_url = data["data"][0]["box_art_url"].format(width="320", height="440")
-                    return image_url
-                else:
-                    return f"Error {response.status}: Could not retrieve image for category {category_id}"
-
+                    return data["data"][0]["box_art_url"].format(width="320", height="440")
+                return f"Error {response.status}: Could not retrieve image for category {category_id}"
 
 
 if __name__ == "__main__":
