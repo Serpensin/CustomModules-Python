@@ -34,6 +34,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "LogHandler", "LogHandler\Lo
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BitmapHandler", "BitmapHandler\BitmapHandler.pyproj", "{EB4BEDC4-A7D3-4638-8AA6-C4D149B4A637}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "StatDock", "StatDock\StatDock.pyproj", "{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,8 @@ Global
 		{3534C9F3-C406-4D96-A9FF-4EAED0C19AE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB4BEDC4-A7D3-4638-8AA6-C4D149B4A637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EB4BEDC4-A7D3-4638-8AA6-C4D149B4A637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
