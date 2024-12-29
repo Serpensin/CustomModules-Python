@@ -104,7 +104,7 @@ def setup(client:discord.Client, tree: discord.app_commands.CommandTree, connect
     if logger is None:
         logger = logging.getLogger("null")
         logger.addHandler(logging.NullHandler)
-    _logger = logger
+    _logger = logger.getChild("StatDock")
 
     _setup_database()
 
@@ -153,19 +153,19 @@ async def task():
 def _setup_database():
     _c.executescript('''
     CREATE TABLE IF NOT EXISTS "STATDOCK" (
-        `id` integer not null primary key autoincrement,
-        `enabled` BOOLEAN not null default 1,
-        `guild_id` INT not null,
-        `category_id` INT not null,
-        `channel_id` INT not null,
-        `type` INT not null,
+        `id` INTEGER NOT NULL primary key autoincrement,
+        `enabled` BOOLEAN NOT NULL default 1,
+        `guild_id` INTEGER NOT NULL,
+        `category_id` INTEGER NOT NULL,
+        `channel_id` INTEGER NOT NULL,
+        `type` INTEGER NOT NULL,
         `timezone` varchar(255) null,
         `timeformat` varchar(255) null,
-        `role_id` INT null,
+        `role_id` INTEGER null,
         `prefix` varchar(255) null,
-        `frequency` INT not null,
-        `last_updated` INT not null,
-        `counter` INT not null default 0
+        `frequency` INTEGER NOT NULL,
+        `last_updated` INTEGER NOT NULL,
+        `counter` INTEGER NOT NULL default 0
     )
     ''')
 
