@@ -6,7 +6,7 @@ import discord
 import pytz
 import sqlite3
 import logging
-# !!! import BitmapHandler from BitmapHandler.py from the Project BitmapHandler !!!
+from CustomModules.bitmap_handler import BitmapHandler
 from datetime import datetime
 from time import time
 from typing import Optional, Any, Literal
@@ -113,6 +113,8 @@ def setup(client:discord.Client, tree: discord.app_commands.CommandTree, connect
     tree.add_command(_statdock_update)
     tree.add_command(_statdock_enable_hidden)
 
+    _logger.info("Module has been set up.")
+
 async def task():
     # Calling this function in setup_hook(), can/will lead to a deadlock!
     async def _function():
@@ -142,6 +144,7 @@ async def task():
                                )
 
     await _bot.wait_until_ready()
+    _logger.info("Task has been started.")
 
     while True:
         await _function()
@@ -153,19 +156,19 @@ async def task():
 def _setup_database():
     _c.executescript('''
     CREATE TABLE IF NOT EXISTS "STATDOCK" (
-        `id` INTEGER NOT NULL primary key autoincrement,
-        `enabled` BOOLEAN NOT NULL default 1,
-        `guild_id` INTEGER NOT NULL,
-        `category_id` INTEGER NOT NULL,
-        `channel_id` INTEGER NOT NULL,
-        `type` INTEGER NOT NULL,
+        `id` integer not null primary key autoincrement,
+        `enabled` BOOLEAN not null default 1,
+        `guild_id` INT not null,
+        `category_id` INT not null,
+        `channel_id` INT not null,
+        `type` INT not null,
         `timezone` varchar(255) null,
         `timeformat` varchar(255) null,
-        `role_id` INTEGER null,
+        `role_id` INT null,
         `prefix` varchar(255) null,
-        `frequency` INTEGER NOT NULL,
-        `last_updated` INTEGER NOT NULL,
-        `counter` INTEGER NOT NULL default 0
+        `frequency` INT not null,
+        `last_updated` INT not null,
+        `counter` INT not null default 0
     )
     ''')
 
