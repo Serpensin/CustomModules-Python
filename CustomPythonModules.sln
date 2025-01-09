@@ -36,6 +36,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BitmapHandler", "BitmapHand
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "StatDock", "StatDock\StatDock.pyproj", "{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PrivateVoice", "PrivateVoice\PrivateVoice.pyproj", "{7D2F6CCB-6D33-4BAB-8838-AF4CCCDA57D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,8 @@ Global
 		{EB4BEDC4-A7D3-4638-8AA6-C4D149B4A637}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{773FB23F-4DC0-40F4-AADE-BC6B8FDFBFF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D2F6CCB-6D33-4BAB-8838-AF4CCCDA57D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D2F6CCB-6D33-4BAB-8838-AF4CCCDA57D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
