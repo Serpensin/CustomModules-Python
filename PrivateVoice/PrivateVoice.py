@@ -227,6 +227,7 @@ _overwrites_channelowner = discord.PermissionOverwrite(
         use_external_sounds=True,
         send_voice_messages=True,
         create_polls=True,
+        use_voice_activation=True,
 )
 
 _overwrites_channelmember = discord.PermissionOverwrite(
