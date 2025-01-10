@@ -395,18 +395,18 @@ async def __create_private_voice_channel(member, setting):
 
     This function creates a new private voice channel for the specified member based on the provided settings.
     It sets the appropriate permissions, generates a unique channel name, and adds the channel to the database.
-    If the channel creation fails, it handles the exception and notifies the member.
+    If the channel is public, it assigns the public role to the channel's permissions.
 
     Args:
         member (discord.Member): The member for whom the private voice channel is being created.
         setting (tuple): A tuple containing the settings for the private voice channel, including:
-            - setting[3] (int): The ID of the category where the private voice channel will be created.
-            - setting[4] (int): The maximum number of users allowed in the private voice channel.
-            - setting[5] (int): The bitrate of the private voice channel in kbps.
-            - setting[6] (bool): Whether the channel is public or private.
-            - setting[7] (int or None): The ID of the role that can join the public channel, if applicable.
+            - setting[3] (int): The ID of the category where the channel will be created.
+            - setting[4] (int): The maximum number of users allowed in the channel.
+            - setting[5] (int): The bitrate of the channel in kbps.
+            - setting[6] (bool): Whether the channel is public.
+            - setting[7] (int or None): The ID of the public role, if applicable.
             - setting[8] (bool): Whether the channel owner is allowed to update the channel settings.
-            - setting[9] (str): The prefix for the private voice channel name, used for public channels.
+            - setting[9] (str): The prefix for the channel name, if applicable.
 
     Returns:
         None
@@ -449,10 +449,34 @@ async def __create_private_voice_channel(member, setting):
             bitrate=bitrate,
             user_limit=max_users,
         )
+        if not public:
+            embed = discord.Embed(
+                title="Private Voice Channel",
+                description=(
+                    "This is your private voice channel. You can use the following commands to manage it."
+                ),
+                color=discord.Color.blurple()
+            )
+            embed.add_field(
+                name="Commands",
+                value=(
+                    "**/pvoice_commander_add <member>** - Add a member to the channel.\n"
+                    "**/pvoice_commander_remove <member>** - Remove a member from the channel.\n"
+                    "**/pvoice_commander_kick <member>** - Kick a member from the channel.\n"
+                    "**/pvoice_commander_limit <limit>** - Set the user limit for the channel.\n"
+                    "**/pvoice_commander_bitrate <bitrate>** - Set the bitrate for the channel.\n"
+                    "**/pvoice_commander_region <region>** - Set the region for the channel.\n"
+                    "**/pvoice_commander_rename <name>** - Rename the channel."
+                ),
+                inline=False
+            )
+            await channel.send(content=member.mention, embed=embed)
 
         # Add to the database
-        _c.execute('INSERT INTO PRIVATEVOICE_OPENCHANNELS (guild_id, channel_id, channelowner_id, public, permit_update) VALUES (?, ?, ?, ?, ?)',
-                   (guild.id, channel.id, 0 if public else member.id, public, permit_update))
+        _c.execute(
+            'INSERT INTO PRIVATEVOICE_OPENCHANNELS (guild_id, channel_id, channelowner_id, public, permit_update) VALUES (?, ?, ?, ?, ?)',
+            (guild.id, channel.id, 0 if public else member.id, public, permit_update)
+        )
         await member.move_to(channel)
         _logger.debug(f"Created a new private voice channel for {member} in {category}.")
     except discord.HTTPException as e:
