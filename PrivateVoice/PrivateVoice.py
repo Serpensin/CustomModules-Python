@@ -763,7 +763,7 @@ async def __pvoice_admin_add(interaction: discord.Interaction,
     _conn.commit()
 
     await interaction.response.send_message(
-        f"Private voice channel generator has been {'updated' if update else 'added'} successfully.\n\n**Channel:** {channel.mention}\n**Category:** {category.mention}\n**Max Users:** {'\u221E' if max_users == 0 else max_users}\n**Bitrate:** {bitrate}kbps\n**Allow updates:** {permit_update}\n**Prefix:** {prefix}",
+        f"Private voice channel generator has been {'updated' if update else 'added'} successfully.\n\n**Channel:** {channel.mention}\n**Category:** {category.mention}\n**Max Users:** {'\u221E' if max_users == 0 else max_users}\n**Bitrate:** {bitrate}kbps\n**Allow updates:** {permit_update}\n**Prefix:** {prefix}\n**Public:** {public}\n**Public Role:** {"" if not public_role else public_role.mention}",
         ephemeral=True)
 
 @discord.app_commands.command(name='pvoice_admin_remove', description='Remove a private voice channel generator from the server.')
@@ -841,7 +841,7 @@ async def __pvoice_admin_list(interaction: discord.Interaction):
         embed.add_field(
             name=f"Channel: {channel.name}",
             value=
-            f"Category: {category.name}\nMax Users: {'\u221E' if setting[4] == 0 else setting[4]}\nBitrate: {setting[5]}kbps\nAllow updates: {setting[8]}\nPrefix: {setting[9]}",
+            f"Category: {category.name}\nMax Users: {'\u221E' if setting[4] == 0 else setting[4]}\nBitrate: {setting[5]}kbps\nAllow updates: {setting[8]}\nPrefix: {setting[9]}\nPublic: {setting[6]}\n**Public Role:** {"" if not setting[6] else "<@&setting[6]>"}",
             inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
