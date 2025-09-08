@@ -19,7 +19,7 @@ class Tracker:
         self._cache = {}
         self._lock = asyncio.Lock()
 
-    async def cache_invites(self):
+    async def cache_invites(self) -> None:
         """
         Cache invites for all guilds the bot is currently in.
         """
@@ -27,7 +27,7 @@ class Tracker:
             tasks = [self._cache_guild_invites(guild) for guild in self.bot.guilds]
             await asyncio.gather(*tasks)
 
-    async def _cache_guild_invites(self, guild):
+    async def _cache_guild_invites(self, guild) -> None:
         """
         Helper method to cache invites for a single guild.
         """
@@ -36,7 +36,7 @@ class Tracker:
         except Forbidden:
             pass
 
-    async def update_invite_cache(self, invite):
+    async def update_invite_cache(self, invite) -> None:
         """
         Update the invite cache with a new or modified invite.
 
@@ -46,7 +46,7 @@ class Tracker:
         async with self._lock:
             self._cache.setdefault(invite.guild.id, {})[invite.code] = invite
 
-    async def remove_invite_cache(self, invite):
+    async def remove_invite_cache(self, invite) -> None:
         """
         Remove an invite from the cache when it's deleted or expired.
 
@@ -76,7 +76,7 @@ class Tracker:
             else:
                 self._cache[guild_id].pop(invite.code, None)
 
-    async def add_guild_cache(self, guild):
+    async def add_guild_cache(self, guild) -> None:
         """
         Add guild invites to the cache.
 
@@ -86,7 +86,7 @@ class Tracker:
         async with self._lock:
             self._cache[guild.id] = {invite.code: invite for invite in await guild.invites()}
 
-    async def remove_guild_cache(self, guild):
+    async def remove_guild_cache(self, guild) -> None:
         """
         Remove guild invites from the cache.
 
@@ -96,7 +96,7 @@ class Tracker:
         async with self._lock:
             self._cache.pop(guild.id, None)
 
-    async def fetch_inviter(self, member):
+    async def fetch_inviter(self, member) -> 'discord.Member | None':
         """
         Fetch the inviter of a member by comparing current and cached invites.
 

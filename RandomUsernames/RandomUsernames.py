@@ -72,7 +72,7 @@ nouns = ['abalone', 'alpaca', 'anchovy', 'anemone', 'antelope', 'apples', 'apric
 
 
 
-def generate_username(num_results: int=1, include_numbers: bool=True):
+def generate_username(num_results: int=1, include_numbers: bool=True) -> list[str]:
     """
     Generates a random username from a list of adjectives and nouns.
 

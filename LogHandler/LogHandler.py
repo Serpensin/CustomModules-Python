@@ -27,7 +27,7 @@ class LogManager:
         self.app_folder_name = app_folder_name
         self.log_level = self._get_log_level(log_level)
     
-    def _get_log_level(self, log_level_str):
+    def _get_log_level(self, log_level_str) -> int:
         """
         Converts a log level string to the corresponding logging level.
 
@@ -46,7 +46,7 @@ class LogManager:
         else:
             raise ValueError(f"Invalid log level: {log_level_str}")
     
-    def get_logger(self, logger_name):
+    def get_logger(self, logger_name) -> logging.Logger:
         """
         Creates and configures a logger with file and console handlers.
 
@@ -103,7 +103,7 @@ class _ColoredFormatter(logging.Formatter):
         'CRITICAL': Fore.MAGENTA,
     }
 
-    def format(self, record):
+    def format(self, record) -> str:
         """
         Formats the log record with color based on the log level.
 

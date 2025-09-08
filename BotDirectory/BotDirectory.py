@@ -21,7 +21,7 @@ class Stats:
         self.DISCORDBOTLISTCOM_TOKEN = DISCORDBOTLISTCOM_TOKEN
         self.DISCORDLIST_TOKEN = DISCORDLIST_TOKEN
 
-    async def _post_stats(self, url, headers, json_data):
+    async def _post_stats(self, url, headers, json_data) -> None:
         """Post statistics to a given URL.
 
         Args:
@@ -34,7 +34,7 @@ class Stats:
                 if resp.status != 200 and self.logger:
                     self.logger.error(f'Failed to update {url}: {resp.status} {resp.reason}')
 
-    async def _topgg(self):
+    async def _topgg(self) -> None:
         """Update statistics on top.gg."""
         if not self.TOPGG_TOKEN:
             return
@@ -51,7 +51,7 @@ class Stats:
             except asyncio.CancelledError:
                 break
 
-    async def _discordbots(self):
+    async def _discordbots(self) -> None:
         """Update statistics on discord.bots.gg."""
         if not self.DISCORDBOTS_TOKEN:
             return
@@ -68,7 +68,7 @@ class Stats:
             except asyncio.CancelledError:
                 break
 
-    async def _discordbotlist_com(self):
+    async def _discordbotlist_com(self) -> None:
         """Update statistics on discordbotlist.com."""
         if not self.DISCORDBOTLISTCOM_TOKEN:
             return
@@ -85,7 +85,7 @@ class Stats:
             except asyncio.CancelledError:
                 break
 
-    async def _discordlist(self):
+    async def _discordlist(self) -> None:
         """Update statistics on discordlist.gg."""
         if not self.DISCORDLIST_TOKEN:
             return
@@ -102,12 +102,12 @@ class Stats:
             except asyncio.CancelledError:
                 break
 
-    async def start_stats_update(self):
+    async def start_stats_update(self) -> None:
         """Start updating statistics on various bot listing sites."""
         updates = [self._topgg(), self._discordbots(), self._discordbotlist_com(), self._discordlist()]
         await asyncio.gather(*updates)
 
-    async def task(self):
+    async def task(self) -> None:
         """Start the task for periodic statistics updates."""
         while True:
             await self.start_stats_update()

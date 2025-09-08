@@ -10,7 +10,7 @@ import traceback
 
 
 # Setup
-def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connection: sqlite3.Connection = None, logger: logging.Logger = None):
+def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connection: sqlite3.Connection = None, logger: logging.Logger = None) -> None:
     """
     Setup the private voice module.
 
@@ -59,7 +59,7 @@ def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connec
 
     _logger.info("Module has been initialized.")
 
-async def add_listener():
+async def add_listener() -> None:
     """
     Add event listeners for voice state updates and channel deletions.
 
@@ -89,7 +89,7 @@ async def add_listener():
 
     _logger.info("Listener has been added.")
 
-async def start_garbage_collector():
+async def start_garbage_collector() -> None:
     """
     Start the garbage collector task.
 
@@ -106,7 +106,7 @@ async def start_garbage_collector():
 
 
 # Garbage collector, that checks in specific intervals, that all open channels in the db still exist. And if not, removes them.
-async def __garbage_collector():
+async def __garbage_collector() -> None:
     """
     Periodically check and remove stale private voice channels.
 
@@ -286,7 +286,7 @@ def __is_channel_flagged_public(channel_id) -> bool:
     result = _c.fetchone()
     return result[0] if result else False
 
-def __setup_database():
+def __setup_database() -> None:
     _c.executescript('''
     CREATE TABLE IF NOT EXISTS "PRIVATEVOICE_OPENCHANNELS" (
         "id" INTEGER NOT NULL,
@@ -348,7 +348,7 @@ def __is_channel_allowed_to_update(channel_id) -> bool:
     result = _c.fetchone()
     return result[0] if result else False
 
-async def __left_private_vc(member, channel_id):
+async def __left_private_vc(member, channel_id) -> None:
     """
     Handle a member leaving a private voice channel.
 
@@ -390,7 +390,7 @@ async def __left_private_vc(member, channel_id):
                    (channel_id,))
     _conn.commit()
 
-async def __create_private_voice_channel(member, setting):
+async def __create_private_voice_channel(member, setting) -> None:
     """
     Create a new private voice channel for a member.
 
@@ -490,7 +490,7 @@ async def __create_private_voice_channel(member, setting):
     finally:
         _conn.commit()
 
-async def __handle_private_vc(member, after_channel_id, before_channel_id=None):
+async def __handle_private_vc(member, after_channel_id, before_channel_id=None) -> None:
     """
     Handle private voice channel management for a member.
 
@@ -590,7 +590,7 @@ async def __is_channel_owner_in_current_vc(interaction: discord.Interaction) -> 
 
 
 # Events
-async def _on_voice_state_update(member, before, after):
+async def _on_voice_state_update(member, before, after) -> None:
     """
     Handle voice state updates for members.
 
@@ -628,7 +628,7 @@ async def _on_voice_state_update(member, before, after):
         case _:
             return
 
-async def _on_channel_delete(channel):
+async def _on_channel_delete(channel) -> None:
     """
     Handle the deletion of a channel.
 
@@ -662,16 +662,17 @@ async def _on_channel_delete(channel):
                                prefix='The prefix for the private voice channel name. (Required/used only for public channels.)'
                               )
 @discord.app_commands.guild_only
-async def __pvoice_admin_add(interaction: discord.Interaction,
-                             channel: discord.VoiceChannel,
-                             category: discord.CategoryChannel,
-                             max_users: int,
-                             permit_update: bool,
-                             bitrate: int = 64,
-                             public: bool = False,
-                             public_role: discord.Role = None,
-                             prefix: str = ''
-                             ):
+async def __pvoice_admin_add(
+    interaction: discord.Interaction,
+    channel: discord.VoiceChannel,
+    category: discord.CategoryChannel,
+    max_users: int,
+    permit_update: bool,
+    bitrate: int = 64,
+    public: bool = False,
+    public_role: discord.Role = None,
+    prefix: str = ''
+) -> None:
     """
     Add a new private voice channel generator to the server.
 
@@ -773,7 +774,7 @@ async def __pvoice_admin_add(interaction: discord.Interaction,
                                )
 @discord.app_commands.checks.has_permissions(manage_guild = True, manage_channels = True)
 @discord.app_commands.guild_only
-async def __pvoice_admin_remove(interaction: discord.Interaction, channel: discord.VoiceChannel, remove: bool):
+async def __pvoice_admin_remove(interaction: discord.Interaction, channel: discord.VoiceChannel, remove: bool) -> None:
     """
     Remove a private voice channel generator from the server.
 
@@ -813,7 +814,7 @@ async def __pvoice_admin_remove(interaction: discord.Interaction, channel: disco
 @discord.app_commands.command(name='pvoice_admin_list', description='List all private voice channel generators in the server.')
 @discord.app_commands.checks.has_permissions(manage_guild = True, manage_channels = True)
 @discord.app_commands.guild_only
-async def __pvoice_admin_list(interaction: discord.Interaction):
+async def __pvoice_admin_list(interaction: discord.Interaction) -> None:
     """
     List all private voice channel generators in the server.
 
@@ -849,7 +850,7 @@ async def __pvoice_admin_list(interaction: discord.Interaction):
 @discord.app_commands.command(name='pvoice_commander_add', description='Add a user to your current private voice channel.')
 @discord.app_commands.describe(member = 'The member to add to the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_add(interaction: discord.Interaction, member: discord.Member):
+async def __pvoice_commander_add(interaction: discord.Interaction, member: discord.Member) -> None:
     """
     Add a user to your current private voice channel.
 
@@ -881,7 +882,7 @@ async def __pvoice_commander_add(interaction: discord.Interaction, member: disco
 @discord.app_commands.command(name='pvoice_commander_remove', description='Remove a user from your current private voice channel.')
 @discord.app_commands.describe(member = 'The member to remove from the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_remove(interaction: discord.Interaction, member: discord.Member):
+async def __pvoice_commander_remove(interaction: discord.Interaction, member: discord.Member) -> None:
     """
     Remove a user from your current private voice channel.
 
@@ -913,7 +914,7 @@ async def __pvoice_commander_remove(interaction: discord.Interaction, member: di
 @discord.app_commands.command(name='pvoice_commander_kick', description='Kick a user from your current private voice channel.')
 @discord.app_commands.describe(member = 'The member to kick from the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_kick(interaction: discord.Interaction, member: discord.Member):
+async def __pvoice_commander_kick(interaction: discord.Interaction, member: discord.Member) -> None:
     """
     Kick a user from your current private voice channel.
 
@@ -945,7 +946,7 @@ async def __pvoice_commander_kick(interaction: discord.Interaction, member: disc
 @discord.app_commands.command(name='pvoice_commander_limit', description='Set the user limit for your current private voice channel.')
 @discord.app_commands.describe(limit = 'The maximum number of users allowed in the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int):
+async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int) -> None:
     """
     Set the user limit for your current private voice channel.
 
@@ -981,7 +982,7 @@ async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int)
 @discord.app_commands.command(name='pvoice_commander_bitrate', description='Set the bitrate for your current private voice channel.')
 @discord.app_commands.describe(bitrate = 'The bitrate (8-384) of the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: int):
+async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: int) -> None:
     """
     Set the bitrate for your current private voice channel.
 
@@ -1041,7 +1042,7 @@ async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: 
     discord.app_commands.Choice(name='US West', value='us-west'),
 ])
 @discord.app_commands.guild_only
-async def __pvoice_commander_region(interaction: discord.Interaction, region: str):
+async def __pvoice_commander_region(interaction: discord.Interaction, region: str) -> None:
     """
     Set the region for your current private voice channel.
 
@@ -1071,7 +1072,7 @@ async def __pvoice_commander_region(interaction: discord.Interaction, region: st
 @discord.app_commands.command(name='pvoice_commander_rename', description='Rename your current private voice channel.')
 @discord.app_commands.describe(name = 'The new name for the private voice channel.')
 @discord.app_commands.guild_only
-async def __pvoice_commander_rename(interaction: discord.Interaction, name: str):
+async def __pvoice_commander_rename(interaction: discord.Interaction, name: str) -> None:
     """
     Rename your current private voice channel.
 

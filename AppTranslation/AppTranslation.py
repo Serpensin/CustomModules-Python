@@ -22,7 +22,7 @@ class Translator(discord.app_commands.Translator):
             }
         }
 
-    async def load(self):
+    async def load(self) -> None:
         """
         Placeholder method for loading translations.
         Currently does nothing.

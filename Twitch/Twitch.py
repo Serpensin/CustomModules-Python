@@ -38,7 +38,7 @@ class TwitchAPI:
         self.users = "https://api.twitch.tv/helix/users"
         self.top = "https://api.twitch.tv/helix/games/top"
 
-    def get_twitch_app_access_token(self):
+    def get_twitch_app_access_token(self) -> str | int:
         """
         Get access token for Twitch API
 
@@ -64,7 +64,7 @@ class TwitchAPI:
             return response.json()["access_token"]
         return response.status_code
 
-    async def check_access_token(self):
+    async def check_access_token(self) -> bool:
         """
         Check if access token is valid
 
@@ -79,7 +79,7 @@ class TwitchAPI:
             async with session.get(url, headers=headers) as response:
                 return response.status == 200
 
-    async def get_game_id(self, game_name):
+    async def get_game_id(self, game_name) -> str:
         """
         Get game ID for game name
 
@@ -112,7 +112,7 @@ class TwitchAPI:
                     return f"No game found with name {game_name}"
                 return f"Failed to get game ID for {game_name} with status code {response.status}"
 
-    async def get_category_stats(self, category_id):
+    async def get_category_stats(self, category_id) -> dict | int | None:
         """
         Get stats for category ID
 
@@ -167,7 +167,7 @@ class TwitchAPI:
             "category_rank": category_rank
         }
 
-    async def get_top_streamers(self, category_id):
+    async def get_top_streamers(self, category_id) -> dict | str:
         """
         Get top streamers for category ID
 
@@ -203,7 +203,7 @@ class TwitchAPI:
                     }
                 return f"Error {response.status}: Could not retrieve top streamers for category {category_id}"
 
-    async def get_api_points(self):
+    async def get_api_points(self) -> int:
         """
         Get API points remaining
 
@@ -218,7 +218,7 @@ class TwitchAPI:
             async with session.get(self.users) as response:
                 return int(response.headers.get("Ratelimit-Remaining"))
 
-    async def get_category_image(self, category_id):
+    async def get_category_image(self, category_id) -> str:
         """
         Get image for category ID
 

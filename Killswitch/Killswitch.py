@@ -2,7 +2,7 @@ import aiohttp
 import html2text
 from bs4 import BeautifulSoup
 
-async def get_killswitch(return_type='html'):
+async def get_killswitch(return_type: str = 'html') -> str | None:
     """
     Gets the current Kill Switch status from the official Dead by Daylight website.
 

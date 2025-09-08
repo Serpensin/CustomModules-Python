@@ -2,7 +2,7 @@ import aiohttp
 import http
 from bs4 import BeautifulSoup
 
-async def playercount(gameid):
+async def playercount(gameid) -> dict[str, str]:
     """
     Gets the current player count of the given game.
 

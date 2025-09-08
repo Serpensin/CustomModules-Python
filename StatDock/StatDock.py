@@ -89,7 +89,7 @@ _bitmap = [
 
 
 # Setup
-def setup(client:discord.Client, tree: discord.app_commands.CommandTree, connection: sqlite3.Connection = None, logger: logging.Logger = None):
+def setup(client:discord.Client, tree: discord.app_commands.CommandTree, connection: sqlite3.Connection = None, logger: logging.Logger = None) -> None:
     global _c, _conn, _bot, _logger, _bitmap
     _conn, _bot, _bitmap = connection, client, BitmapHandler(_bitmap)
 
@@ -115,7 +115,7 @@ def setup(client:discord.Client, tree: discord.app_commands.CommandTree, connect
 
     _logger.info("Module has been set up.")
 
-async def task():
+async def task() -> None:
     # Calling this function in setup_hook(), can/will lead to a deadlock!
     async def _function():
         _c.execute('SELECT * FROM `STATDOCK` WHERE `enabled` = 1 AND (last_updated + frequency * 60) < ?', (int(time()),))
@@ -153,7 +153,7 @@ async def task():
         except asyncio.CancelledError:
             break
 
-def _setup_database():
+def _setup_database() -> None:
     _c.executescript('''
     CREATE TABLE IF NOT EXISTS "STATDOCK" (
         `id` integer not null primary key autoincrement,
@@ -178,23 +178,24 @@ def _setup_database():
 
 
 # Main functions
-async def _init_dock(guild: discord.Guild,
-                     category: discord.CategoryChannel,
-                     channel: discord.VoiceChannel,
-                     stat_type: Literal['time', 'role', 'member'],
-                     timezone: str,
-                     timeformat: str,
-                     role: discord.Role,
-                     prefix: str,
-                     frequency: int,
-                     countbots: bool = False,
-                     countusers: bool = False,
-                     counttext: bool = False,
-                     countvoice: bool = False,
-                     countcategory: bool = False,
-                     countstage: bool = False,
-                     countforum: bool = False
-                     ):
+async def _init_dock(
+    guild: discord.Guild,
+    category: discord.CategoryChannel,
+    channel: discord.VoiceChannel,
+    stat_type: Literal['time', 'role', 'member'],
+    timezone: str,
+    timeformat: str,
+    role: discord.Role,
+    prefix: str,
+    frequency: int,
+    countbots: bool = False,
+    countusers: bool = False,
+    counttext: bool = False,
+    countvoice: bool = False,
+    countcategory: bool = False,
+    countstage: bool = False,
+    countforum: bool = False
+) -> Optional[str]:
     # Initializes the dock the first time.
     try:
         match stat_type:
@@ -245,7 +246,9 @@ async def _init_dock(guild: discord.Guild,
     )
     _conn.commit()
 
-async def _re_init_dock(guild_id: int, category_id: int, channel_id: int, stat_type: int, timezone: str, timeformat: str, counter: int, role_id: int, prefix: str, ignore_none_category: bool = False):
+async def _re_init_dock(
+    guild_id: int, category_id: int, channel_id: int, stat_type: int, timezone: str, timeformat: str, counter: int, role_id: int, prefix: str, ignore_none_category: bool = False
+) -> None:
     # Re-initializes the dock, if the channel got deleted and the stat dock not disabled/deleted.
     guild: discord.Guild = await _get_or_fetch('guild', guild_id)
     category: discord.CategoryChannel = await _get_or_fetch('channel', category_id)
@@ -277,7 +280,9 @@ async def _re_init_dock(guild_id: int, category_id: int, channel_id: int, stat_t
     except Exception as e:
         _logger.warning(e)
 
-async def _update_dock(enabled, guild_id, category_id, channel_id, stat_type, timezone, timeformat, counter, role_id, prefix):
+async def _update_dock(
+    enabled, guild_id, category_id, channel_id, stat_type, timezone, timeformat, counter, role_id, prefix
+) -> Optional[bool]:
     # Updates a dock.
     channel: discord.VoiceChannel = await _get_or_fetch('channel', channel_id)
     guild: discord.Guild = await _get_or_fetch('guild', guild_id)
@@ -330,21 +335,23 @@ async def _update_dock(enabled, guild_id, category_id, channel_id, stat_type, ti
 
 
 # Helper functions
-async def _count_members_in_guild(guild: discord.Guild, countbots: bool, countusers: bool):
+async def _count_members_in_guild(guild: discord.Guild, countbots: bool, countusers: bool) -> int:
     members = [
         member for member in guild.members 
         if (countusers and not member.bot) or (countbots and member.bot)
     ]
     return len(members)
 
-async def _count_members_by_role(role: discord.Role, countbots: bool, countusers: bool):
+async def _count_members_by_role(role: discord.Role, countbots: bool, countusers: bool) -> int:
     members_in_role = [
         member for member in role.members 
         if (countusers and not member.bot) or (countbots and member.bot)
     ]
     return len(members_in_role)
 
-async def _count_channels_in_guild(guild: discord.Guild, counttext: bool, countvoice: bool, countcategory: bool, countstage: bool, countforum: bool) -> int:
+async def _count_channels_in_guild(
+    guild: discord.Guild, counttext: bool, countvoice: bool, countcategory: bool, countstage: bool, countforum: bool
+) -> int:
     count = 0
 
     for channel in guild.channels:
@@ -455,22 +462,22 @@ def _get_current_time(timezone: str, time_format: str) -> str:
     ]
 )
 async def _statdock_add(
-        interaction: discord.Interaction,
-        stat_type: str,
-        category: discord.CategoryChannel,
-        frequency: int,
-        prefix: str = None,
-        timezone: str = 'Europe/Berlin',
-        timeformat: str = '%H:%M',
-        countbots: bool = False,
-        countusers: bool = False,
-        counttext: bool = False,
-        countvoice: bool = False,
-        countcategory: bool = False,
-        countstage: bool = False,
-        countforum: bool = False,
-        role: discord.Role = None
-    ):
+    interaction: discord.Interaction,
+    stat_type: str,
+    category: discord.CategoryChannel,
+    frequency: int,
+    prefix: str = None,
+    timezone: str = 'Europe/Berlin',
+    timeformat: str = '%H:%M',
+    countbots: bool = False,
+    countusers: bool = False,
+    counttext: bool = False,
+    countvoice: bool = False,
+    countcategory: bool = False,
+    countstage: bool = False,
+    countforum: bool = False,
+    role: discord.Role = None
+) -> None:
 
     if not category:
        await interaction.response.send_message("How did we get here?", ephemeral=True)
@@ -543,7 +550,7 @@ async def timezone_autocomplete(interaction: discord.Interaction, current: str) 
         discord.app_commands.Choice(name='prefix', value='prefix')
     ]
 )
-async def _statdock_update(interaction: discord.Interaction, dock: discord.VoiceChannel, action: str, prefix: str = None):
+async def _statdock_update(interaction: discord.Interaction, dock: discord.VoiceChannel, action: str, prefix: str = None) -> None:
     await interaction.response.defer(ephemeral=True)
 
     is_dock = _c.execute("SELECT EXISTS(SELECT 1 FROM STATDOCK WHERE `channel_id` = ?)", (dock.id,)).fetchone()[0]
@@ -587,7 +594,7 @@ async def _statdock_update(interaction: discord.Interaction, dock: discord.Voice
 @discord.app_commands.command(name='statdock_list', description='Lists every created stat dock.')
 @discord.app_commands.checks.cooldown(1, 10, key=lambda i: (i.user.id))
 @discord.app_commands.checks.has_permissions(manage_guild = True)
-async def _statdock_list(interaction: discord.Interaction):
+async def _statdock_list(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
 
     _c.execute('SELECT * FROM STATDOCK WHERE `guild_id` = ?', (interaction.guild.id,))
@@ -641,7 +648,7 @@ async def _statdock_list(interaction: discord.Interaction):
 @discord.app_commands.command(name='statdock_enable_hidden', description='Enables all disabled channels, that got deleted.')
 @discord.app_commands.checks.cooldown(1, 10, key=lambda i: (i.user.id))
 @discord.app_commands.checks.has_permissions(manage_guild = True)
-async def _statdock_enable_hidden(interaction: discord.Interaction):
+async def _statdock_enable_hidden(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
     _c.execute('SELECT * FROM `STATDOCK` WHERE `enabled` = 0 AND `guild_id` = ?', (interaction.guild.id,))
     data = _c.fetchall()
