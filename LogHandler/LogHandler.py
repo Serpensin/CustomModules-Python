@@ -40,7 +40,7 @@ class LogManager:
         Raises:
             ValueError: If the log level string is invalid.
         """
-        level = logging.getLevelName(log_level_str.upper())
+        level = getattr(logging, log_level_str.upper(), None)
         if isinstance(level, int):
             return level
         else:
@@ -74,11 +74,11 @@ class LogManager:
         
         # Create a formatter for the file handler
         dt_fmt = '%Y-%m-%d %H:%M:%S'
-        file_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        file_formatter = logging.Formatter('[{asctime}] [PID:{process}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         file_handler.setFormatter(file_formatter)
         
         # Create a formatter for the console handler with color
-        color_formatter = _ColoredFormatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        color_formatter = _ColoredFormatter('[{asctime}] [PID:{process}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         console_handler.setFormatter(color_formatter)
         
         # Add the handlers to the logger
