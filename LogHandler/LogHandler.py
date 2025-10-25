@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import os
+import threading
 from colorama import Fore, Style, init
 
 
@@ -26,6 +27,7 @@ class LogManager:
         self.log_folder = log_folder
         self.app_folder_name = app_folder_name
         self.log_level = self._get_log_level(log_level)
+        self._lock = threading.Lock()  # Thread-safety lock for handler operations
     
     def _get_log_level(self, log_level_str) -> int:
         """
@@ -60,6 +62,10 @@ class LogManager:
         logger = logging.getLogger(logger_name)
         logger.setLevel(self.log_level)
         
+        # Prevent duplicate handlers if logger already exists
+        if logger.handlers:
+            return logger
+        
         # Create a file handler that rotates logs at midnight
         file_handler = logging.handlers.TimedRotatingFileHandler(
             filename=os.path.join(self.log_folder, f'{self.app_folder_name}.log'),
@@ -68,6 +74,16 @@ class LogManager:
             backupCount=27,
             delay=True
         )
+        
+        # Customize rotation naming: NAME.DATUM.log instead of NAME.log.DATUM
+        file_handler.namer = lambda name: name.replace('.log', '') + '.log'
+        
+        # Make the file handler thread-safe by adding a lock
+        original_emit = file_handler.emit
+        def thread_safe_emit(record):
+            with self._lock:
+                original_emit(record)
+        file_handler.emit = thread_safe_emit
         
         # Create a console handler with color support
         console_handler = logging.StreamHandler()
