@@ -1,0 +1,13 @@
+include README.md
+include LICENSE.txt
+include pyproject.toml
+recursive-include CustomModules *.txt
+recursive-include CustomModules *.md
+exclude .gitignore
+exclude .gitattributes
+exclude *.sln
+exclude *.pyproj
+recursive-exclude .git *
+recursive-exclude .github *
+recursive-exclude .vs *
+recursive-exclude .vscode *

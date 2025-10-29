@@ -1,0 +1,62 @@
+name: Test Build
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test package build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine setuptools wheel
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Check distribution
+      run: |
+        twine check dist/*
+
+    - name: Test import (core modules)
+      run: |
+        pip install dist/*.whl
+        python -c "from CustomModules.bitmap_handler import BitmapHandler; print('BitmapHandler imported successfully')"
+        python -c "from CustomModules.log_handler import LogManager; print('LogManager imported successfully')"
+
+    - name: Test install with extras
+      run: |
+        pip install "dist/*.whl[DatabaseHandler]" || pip install "CustomModules[DatabaseHandler]" -f dist/
+        python -c "from CustomModules.database_handler import DatabaseHandler; print('DatabaseHandler imported successfully')"
+
+    - name: List installed packages
+      run: |
+        pip list
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
+      with:
+        name: python-package-distributions
+        path: dist/
