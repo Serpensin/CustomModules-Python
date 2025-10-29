@@ -24,11 +24,17 @@ __version__ = '1.0.0'
 __author__ = 'Serpensin'
 __license__ = 'AGPL-3.0'
 
-# Import all modules for easy access
-from . import bitmap_handler
-from . import log_handler
-
 # Conditional imports based on available dependencies
+try:
+    from . import bitmap_handler
+except ImportError:
+    pass
+
+try:
+    from . import log_handler
+except ImportError:
+    pass
+
 try:
     from . import app_translation
 except ImportError:

@@ -208,8 +208,10 @@ async def _init_dock(
     try:
         match stat_type:
             case "time":
+                prefix_with_space = prefix + " " if prefix else ""
+                current_time = _get_current_time(timezone=timezone, time_format=timeformat)
                 await channel.edit(
-                    name=f"{prefix + " " if prefix else ""}{_get_current_time(timezone=timezone, time_format=timeformat)}"
+                    name=f"{prefix_with_space}{current_time}"
                 )
             case "role":
                 members_in_role = await _count_members_by_role(
