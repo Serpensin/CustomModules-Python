@@ -1,5 +1,12 @@
 # CustomModules
 
+[![PyPI version](https://img.shields.io/pypi/v/CustomModules.svg)](https://pypi.org/project/CustomModules/)
+[![Python versions](https://img.shields.io/pypi/pyversions/CustomModules.svg)](https://pypi.org/project/CustomModules/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Build Status](https://github.com/Serpensin/CustomModules-Python/actions/workflows/test-build.yml/badge.svg)](https://github.com/Serpensin/CustomModules-Python/actions/workflows/test-build.yml)
+[![PyPI downloads](https://img.shields.io/pypi/dm/CustomModules.svg)](https://pypi.org/project/CustomModules/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A collection of custom Python modules for Discord bots and various utilities.
 
 ## Installation
