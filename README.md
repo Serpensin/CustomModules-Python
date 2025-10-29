@@ -25,7 +25,7 @@ pip install CustomModules[all]
 
 ## Available Modules
 
-- **AppTranslation** - Application translation utilities
+- **AppTranslation** - Discord Application translation utilities
 - **BitmapHandler** - Bitmap manipulation and handling
 - **BotDirectory** - Bot directory management
 - **DatabaseHandler** - Multi-database async handler (SQLite, MySQL, PostgreSQL, MongoDB)
@@ -34,7 +34,7 @@ pip install CustomModules[all]
 - **Killswitch** - Dead by Daylight killswitch monitoring
 - **Libretrans** - LibreTranslate integration
 - **LogHandler** - Advanced logging with colored console output
-- **Patchnotes** - Patch notes management
+- **Patchnotes** - Patch notes management for DeadByDaylight
 - **PrivateVoice** - Private voice channel management
 - **RandomUsernames** - Random username generation
 - **StatDock** - Statistics tracking for Discord
@@ -64,12 +64,8 @@ This project is licensed under the GNU Affero General Public License v3 (AGPL-3.
 ## Documentation
 
 - **[INSTALLATION.md](INSTALLATION.md)** - Detailed installation guide for end users
-- **[TRUSTED_PUBLISHING.md](TRUSTED_PUBLISHING.md)** - How to set up PyPI Trusted Publishing (recommended)
-- **[PUBLISHING.md](PUBLISHING.md)** - Instructions for publishing to PyPI
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Guide for developers and contributors
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference card
-- **[SUMMARY.md](SUMMARY.md)** - Package setup summary
 
 ## Contributing
 
