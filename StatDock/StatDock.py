@@ -217,15 +217,17 @@ async def _init_dock(
                 members_in_role = await _count_members_by_role(
                     role=role, countbots=countbots, countusers=countusers
                 )
+                prefix_with_space = prefix + " " if prefix else ""
                 await channel.edit(
-                    name=f"{prefix + " " if prefix else ""}{members_in_role}"
+                    name=f"{prefix_with_space}{members_in_role}"
                 )
             case "member":
                 members_in_guild = await _count_members_in_guild(
                     guild=guild, countbots=countbots, countusers=countusers
                 )
+                prefix_with_space = prefix + " " if prefix else ""
                 await channel.edit(
-                    name=f"{prefix + " " if prefix else ""}{members_in_guild}"
+                    name=f"{prefix_with_space}{members_in_guild}"
                 )
             case "channel":
                 channels_in_guild = await _count_channels_in_guild(
@@ -236,8 +238,9 @@ async def _init_dock(
                     countstage=countstage,
                     countforum=countforum,
                 )
+                prefix_with_space = prefix + " " if prefix else ""
                 await channel.edit(
-                    name=f"{prefix + " " if prefix else ""}{channels_in_guild}"
+                    name=f"{prefix_with_space}{channels_in_guild}"
                 )
 
             case _:
@@ -302,8 +305,10 @@ async def _re_init_dock(
     try:
         match stat_type:
             case "time":
+                prefix_with_space = prefix + " " if prefix else ""
+                current_time = _get_current_time(timezone=timezone, time_format=timeformat)
                 created_channel = await guild.create_voice_channel(
-                    name=f"{prefix + " " if prefix else ""}{_get_current_time(timezone=timezone, time_format=timeformat)}",
+                    name=f"{prefix_with_space}{current_time}",
                     category=category,
                     overwrites={guild.default_role: _overwrites},
                 )
@@ -313,8 +318,9 @@ async def _re_init_dock(
                     countbots=_bitmap.check_key_in_bitkey("countbots", counter),
                     countusers=_bitmap.check_key_in_bitkey("countusers", counter),
                 )
+                prefix_with_space = prefix + " " if prefix else ""
                 created_channel = await guild.create_voice_channel(
-                    name=f"{prefix + " " if prefix else ""}{members_in_role}",
+                    name=f"{prefix_with_space}{members_in_role}",
                     category=category,
                     overwrites={guild.default_role: _overwrites},
                 )
@@ -324,8 +330,9 @@ async def _re_init_dock(
                     countbots=_bitmap.check_key_in_bitkey("countbots", counter),
                     countusers=_bitmap.check_key_in_bitkey("countusers", counter),
                 )
+                prefix_with_space = prefix + " " if prefix else ""
                 created_channel = await guild.create_voice_channel(
-                    name=f"{prefix + " " if prefix else ""}{members_in_guild}",
+                    name=f"{prefix_with_space}{members_in_guild}",
                     category=category,
                     overwrites={guild.default_role: _overwrites},
                 )
