@@ -1,0 +1,30 @@
+# Core async database support for SQLite
+aiosqlite>=0.19.0
+
+# MySQL/MariaDB support
+aiomysql>=0.2.0
+
+# PostgreSQL support (asyncpg preferred, psycopg as fallback)
+asyncpg>=0.29.0
+psycopg[binary,pool]>=3.1.0
+
+# MongoDB support
+motor>=3.3.0
+
+# Note: Install only the database drivers you need
+# For SQLite only:
+#   pip install aiosqlite
+#
+# For MySQL/MariaDB:
+#   pip install aiosqlite aiomysql
+#
+# For PostgreSQL:
+#   pip install aiosqlite asyncpg
+#   or
+#   pip install aiosqlite psycopg[binary,pool]
+#
+# For MongoDB:
+#   pip install aiosqlite motor
+#
+# For all databases:
+#   pip install -r requirements.txt
