@@ -24,6 +24,7 @@ classifiers = [
     "Topic :: Communications :: Chat",
 ]
 keywords = ["discord", "bot", "utilities", "modules", "custom"]
+dynamic = ["optional-dependencies"]
 
 [project.license]
 text = "AGPL-3.0-or-later"
