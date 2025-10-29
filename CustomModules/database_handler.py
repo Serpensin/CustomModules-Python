@@ -7,4 +7,22 @@ _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _parent_dir not in sys.path:
     sys.path.insert(0, _parent_dir)
 
-from DatabaseHandler.DatabaseHandler import *
+from DatabaseHandler.DatabaseHandler import (
+    BaseDatabaseBackend,
+    SQLiteBackend,
+    MySQLBackend,
+    PostgreSQLBackend,
+    MongoDBBackend,
+    AsyncDatabaseHandler,
+    SyncDatabaseHandler
+)
+
+__all__ = [
+    'BaseDatabaseBackend',
+    'SQLiteBackend',
+    'MySQLBackend',
+    'PostgreSQLBackend',
+    'MongoDBBackend',
+    'AsyncDatabaseHandler',
+    'SyncDatabaseHandler'
+]

@@ -7,4 +7,6 @@ _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _parent_dir not in sys.path:
     sys.path.insert(0, _parent_dir)
 
-from StatDock.StatDock import *
+from StatDock.StatDock import setup, task, timezone_autocomplete
+
+__all__ = ['setup', 'task', 'timezone_autocomplete']

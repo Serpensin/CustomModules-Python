@@ -52,13 +52,15 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='CustomModules',
-    version='1.0.0',
+    version='1.0.2',
     author='Serpensin',
     description='A collection of custom Python modules for Discord bots and utilities',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
     url='https://github.com/Serpensin/CustomModules-Python',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*', 'tests.*']),
+    package_data={'CustomModules': ['py.typed']},
+    include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
