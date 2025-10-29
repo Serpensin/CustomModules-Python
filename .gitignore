@@ -159,3 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .vs/*
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.github\instructions\snyk_rules.instructions.md
+/.vscode
+/.github/instructions
