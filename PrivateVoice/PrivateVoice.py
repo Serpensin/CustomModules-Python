@@ -1,16 +1,32 @@
-import sys
-if sys.version_info < (3, 10):
-    raise ImportError("This module requires Python 3.10 or higher to work correctly.")
+"""
+Discord Private Voice Channel Manager.
+
+This module provides dynamic private voice channel creation and management,
+allowing users to create, customize, and control their own voice channels with
+various settings including user limits, permissions, channel naming, and more.
+"""
+# pylint: disable=too-many-lines
+
 import asyncio
-import discord
 import logging
 import sqlite3
+import sys
 import traceback
+from typing import Optional
 
+import discord
+
+if sys.version_info < (3, 10):
+    raise ImportError("This module requires Python 3.10 or higher to work correctly.")
 
 
 # Setup
-def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connection: sqlite3.Connection = None, logger: logging.Logger = None) -> None:
+def setup(
+    client: discord.Client,
+    tree: discord.app_commands.CommandTree,
+    connection: Optional[sqlite3.Connection] = None,
+    logger: Optional[logging.Logger] = None,
+) -> None:
     """
     Setup the private voice module.
 
@@ -26,7 +42,7 @@ def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connec
     Raises:
         ValueError: If the command tree or Discord client is None.
     """
-    global _c, _conn, _bot, _logger, internal_db_connection
+    global _c, _conn, _bot, _logger, internal_db_connection  # pylint: disable=global-variable-undefined
     _conn, _bot = connection, client
     internal_db_connection = False
 
@@ -41,7 +57,7 @@ def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connec
     _c = _conn.cursor()
     if logger is None:
         logger = logging.getLogger("null")
-        logger.addHandler(logging.NullHandler)
+        logger.addHandler(logging.NullHandler())
     _logger = logger.getChild("PrivateVoice")
 
     __setup_database()
@@ -59,6 +75,7 @@ def setup(client: discord.Client, tree: discord.app_commands.CommandTree, connec
 
     _logger.info("Module has been initialized.")
 
+
 async def add_listener() -> None:
     """
     Add event listeners for voice state updates and channel deletions.
@@ -72,22 +89,25 @@ async def add_listener() -> None:
 
     You can also _on_voice_state_update and _on_channel_delete functions directly to the event handlers.
     """
-    original_on_voice_state_update = getattr(_bot, 'on_voice_state_update', None)
-    original_on_guild_channel_delete = getattr(_bot, 'on_guild_channel_delete', None)
+    original_on_voice_state_update = getattr(_bot, "on_voice_state_update", None)
+    original_on_guild_channel_delete = getattr(_bot, "on_guild_channel_delete", None)
 
     async def new_on_voice_state_update(member, before, after):
         if original_on_voice_state_update:
             await original_on_voice_state_update(member, before, after)
         await _on_voice_state_update(member, before, after)
+
     _bot.on_voice_state_update = new_on_voice_state_update
 
     async def new_on_guild_channel_delete(channel):
         if original_on_guild_channel_delete:
             await original_on_guild_channel_delete(channel)
         await _on_channel_delete(channel)
+
     _bot.on_guild_channel_delete = new_on_guild_channel_delete
 
     _logger.info("Listener has been added.")
+
 
 async def start_garbage_collector() -> None:
     """
@@ -104,8 +124,8 @@ async def start_garbage_collector() -> None:
     _bot.loop.create_task(__garbage_collector())
 
 
-
-# Garbage collector, that checks in specific intervals, that all open channels in the db still exist. And if not, removes them.
+# Garbage collector, that checks in specific intervals,
+# that all open channels in the db still exist. And if not, removes them.
 async def __garbage_collector() -> None:
     """
     Periodically check and remove stale private voice channels.
@@ -120,130 +140,138 @@ async def __garbage_collector() -> None:
     Returns:
         None
     """
+
     async def _function():
-        _c.execute('SELECT channel_id FROM PRIVATEVOICE_OPENCHANNELS')
+        _c.execute("SELECT channel_id FROM PRIVATEVOICE_OPENCHANNELS")
         open_channels = {channel_id for (channel_id,) in _c.fetchall()}
-        stale_channels = [channel_id for channel_id in open_channels if not _bot.get_channel(channel_id)]
+        stale_channels = [
+            channel_id
+            for channel_id in open_channels
+            if not _bot.get_channel(channel_id)
+        ]
         if stale_channels:
-            _c.executemany('DELETE FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?', [(channel_id,) for channel_id in stale_channels])
+            _c.executemany(
+                "DELETE FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?",
+                [(channel_id,) for channel_id in stale_channels],
+            )
             _conn.commit()
-            _logger.debug(f"Removed {len(stale_channels)} stale private voice channels: {', '.join(map(str, stale_channels))}")
+            _logger.debug(
+                f"Removed {len(stale_channels)} stale private voice channels: {', '.join(map(str, stale_channels))}"
+            )
 
     while True:
         try:
             await _function()
             await asyncio.sleep(60 * 2)
         except asyncio.CancelledError:
+            # Cleanup before propagating cancellation
             _conn.commit()
             if internal_db_connection:
                 _conn.close()
-            break
-        except Exception as e:
+            raise
+        except (discord.HTTPException, sqlite3.Error) as e:
             _logger.error(f"Garbage collector failed: {e}\n{traceback.format_exc()}")
-            try:
-                await asyncio.sleep(20)
-            except asyncio.CancelledError:
-                break
+            await asyncio.sleep(20)
 
 
 # Permission Overwrites
 _overwrites_everyone = discord.PermissionOverwrite(
-        create_instant_invite=False,
-        kick_members=False,
-        ban_members=False,
-        administrator=False,
-        manage_channels=False,
-        manage_guild=False,
-        add_reactions=False,
-        view_audit_log=False,
-        priority_speaker=False,
-        stream=False,
-        read_messages=False,
-        view_channel=False,
-        send_messages=False,
-        send_tts_messages=False,
-        manage_messages=False,
-        embed_links=False,
-        attach_files=False,
-        read_message_history=False,
-        mention_everyone=False,
-        external_emojis=False,
-        use_external_emojis=False,
-        view_guild_insights=False,
-        connect=False,
-        speak=False,
-        mute_members=False,
-        deafen_members=False,
-        move_members=False,
-        use_voice_activation=False,
-        change_nickname=False,
-        manage_nicknames=False,
-        manage_roles=False,
-        manage_permissions=False,
-        manage_webhooks=False,
-        manage_expressions=False,
-        manage_emojis=False,
-        manage_emojis_and_stickers=False,
-        use_application_commands=False,
-        request_to_speak=False,
-        manage_events=False,
-        manage_threads=False,
-        create_public_threads=False,
-        create_private_threads=False,
-        send_messages_in_threads=False,
-        external_stickers=False,
-        use_external_stickers=False,
-        use_embedded_activities=False,
-        moderate_members=False,
-        use_soundboard=False,
-        use_external_sounds=False,
-        send_voice_messages=False,
-        create_expressions=False,
-        create_events=False,
-        send_polls=False,
-        create_polls=False,
-        use_external_apps=False,
+    create_instant_invite=False,
+    kick_members=False,
+    ban_members=False,
+    administrator=False,
+    manage_channels=False,
+    manage_guild=False,
+    add_reactions=False,
+    view_audit_log=False,
+    priority_speaker=False,
+    stream=False,
+    read_messages=False,
+    view_channel=False,
+    send_messages=False,
+    send_tts_messages=False,
+    manage_messages=False,
+    embed_links=False,
+    attach_files=False,
+    read_message_history=False,
+    mention_everyone=False,
+    external_emojis=False,
+    use_external_emojis=False,
+    view_guild_insights=False,
+    connect=False,
+    speak=False,
+    mute_members=False,
+    deafen_members=False,
+    move_members=False,
+    use_voice_activation=False,
+    change_nickname=False,
+    manage_nicknames=False,
+    manage_roles=False,
+    manage_permissions=False,
+    manage_webhooks=False,
+    manage_expressions=False,
+    manage_emojis=False,
+    manage_emojis_and_stickers=False,
+    use_application_commands=False,
+    request_to_speak=False,
+    manage_events=False,
+    manage_threads=False,
+    create_public_threads=False,
+    create_private_threads=False,
+    send_messages_in_threads=False,
+    external_stickers=False,
+    use_external_stickers=False,
+    use_embedded_activities=False,
+    moderate_members=False,
+    use_soundboard=False,
+    use_external_sounds=False,
+    send_voice_messages=False,
+    create_expressions=False,
+    create_events=False,
+    send_polls=False,
+    create_polls=False,
+    use_external_apps=False,
 )
 
 _overwrites_channelowner = discord.PermissionOverwrite(
-        add_reactions=True,
-        priority_speaker=True,
-        stream=True,
-        read_messages=True,
-        view_channel=True,
-        send_messages=True,
-        send_tts_messages=True,
-        embed_links=True,
-        attach_files=True,
-        read_message_history=True,
-        external_emojis=True,
-        use_external_emojis=True,
-        connect=True,
-        speak=True,
-        mute_members=True,
-        deafen_members=True,
-        use_embedded_activities=True,
-        use_soundboard=True,
-        use_external_sounds=True,
-        send_voice_messages=True,
-        create_polls=True,
-        use_voice_activation=True,
+    add_reactions=True,
+    priority_speaker=True,
+    stream=True,
+    read_messages=True,
+    view_channel=True,
+    send_messages=True,
+    send_tts_messages=True,
+    embed_links=True,
+    attach_files=True,
+    read_message_history=True,
+    external_emojis=True,
+    use_external_emojis=True,
+    connect=True,
+    speak=True,
+    mute_members=True,
+    deafen_members=True,
+    use_embedded_activities=True,
+    use_soundboard=True,
+    use_external_sounds=True,
+    send_voice_messages=True,
+    create_polls=True,
+    use_voice_activation=True,
 )
 
 _overwrites_channelmember = discord.PermissionOverwrite(
-        view_channel=True,
-        connect=True,
-        speak=True,
-        use_voice_activation=True,
-        use_external_apps=True,
-        use_external_sounds=True,
-        use_soundboard=True,
-        send_voice_messages=True,
-        embed_links=True,
-        attach_files=True,
-        stream=True,
-        external_emojis=True,
-        use_external_emojis=True,
+    view_channel=True,
+    connect=True,
+    speak=True,
+    use_voice_activation=True,
+    use_external_apps=True,
+    use_external_sounds=True,
+    use_soundboard=True,
+    send_voice_messages=True,
+    embed_links=True,
+    attach_files=True,
+    stream=True,
+    external_emojis=True,
+    use_external_emojis=True,
 )
 
 
@@ -263,9 +291,11 @@ def __is_channel_in_private_voice_list(member, channel_id) -> bool:
         bool: True if the channel is in the private voice list, False otherwise.
     """
     _c.execute(
-        'SELECT 1 FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id = ?',
-        (member.guild.id, channel_id))
+        "SELECT 1 FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id = ?",
+        (member.guild.id, channel_id),
+    )
     return _c.fetchone() is not None
+
 
 def __is_channel_flagged_public(channel_id) -> bool:
     """
@@ -281,13 +311,16 @@ def __is_channel_flagged_public(channel_id) -> bool:
         bool: True if the channel is flagged as public, False otherwise.
     """
     _c.execute(
-        'SELECT public FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?',
-        (channel_id, ))
+        "SELECT public FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?",
+        (channel_id,),
+    )
     result = _c.fetchone()
     return result[0] if result else False
 
+
 def __setup_database() -> None:
-    _c.executescript('''
+    _c.executescript(
+        """
     CREATE TABLE IF NOT EXISTS "PRIVATEVOICE_OPENCHANNELS" (
         "id" INTEGER NOT NULL,
         "guild_id" INTEGER NOT NULL,
@@ -310,7 +343,9 @@ def __setup_database() -> None:
           "prefix" TEXT,
           PRIMARY KEY ("id" AUTOINCREMENT)
     )
-    ''')
+    """
+    )
+
 
 def __is_channel_owner(member, channel_id) -> bool:
     """
@@ -327,9 +362,11 @@ def __is_channel_owner(member, channel_id) -> bool:
         bool: True if the member is the owner of the private voice channel, False otherwise.
     """
     _c.execute(
-        'SELECT 1 FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id = ? AND channelowner_id = ?',
-        (member.guild.id, channel_id, member.id))
+        "SELECT 1 FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id = ? AND channelowner_id = ?",
+        (member.guild.id, channel_id, member.id),
+    )
     return _c.fetchone() is not None
+
 
 # Is channel allowed to be updated
 def __is_channel_allowed_to_update(channel_id) -> bool:
@@ -343,10 +380,12 @@ def __is_channel_allowed_to_update(channel_id) -> bool:
         bool: True if the channel is allowed to be updated, False otherwise.
     """
     _c.execute(
-        'SELECT permit_update FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?',
-        (channel_id, ))
+        "SELECT permit_update FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?",
+        (channel_id,),
+    )
     result = _c.fetchone()
     return result[0] if result else False
+
 
 async def __left_private_vc(member, channel_id) -> None:
     """
@@ -365,31 +404,37 @@ async def __left_private_vc(member, channel_id) -> None:
     Returns:
         None
     """
-    isPublic = __is_channel_flagged_public(channel_id)
-    if not __is_channel_owner(member, channel_id) and not isPublic:
+    is_public = __is_channel_flagged_public(channel_id)
+    if not __is_channel_owner(member, channel_id) and not is_public:
         return
-
     channel: discord.VoiceChannel = member.guild.get_channel(channel_id)
     if channel.members:
-        if isPublic:
+        if is_public:
             return
         for member_new in channel.members:
             if member_new.id != member.id:
-                await channel.edit(name=f"{member_new.display_name}'s Channel",
-                                   overwrites={
-                                       member_new: _overwrites_channelowner,
-                                       member: _overwrites_channelmember,
-                                       member.guild.default_role: _overwrites_everyone
-                                   })
-                _c.execute('UPDATE PRIVATEVOICE_OPENCHANNELS SET channelowner_id = ? WHERE channel_id = ?',
-                           (member_new.id, channel_id))
+                await channel.edit(
+                    name=f"{member_new.display_name}'s Channel",
+                    overwrites={
+                        member_new: _overwrites_channelowner,
+                        member: _overwrites_channelmember,
+                        member.guild.default_role: _overwrites_everyone,
+                    },
+                )
+                _c.execute(
+                    "UPDATE PRIVATEVOICE_OPENCHANNELS SET channelowner_id = ? WHERE channel_id = ?",
+                    (member_new.id, channel_id),
+                )
                 break
     else:
         await channel.delete()
-        _c.execute('DELETE FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?',
-                   (channel_id,))
+        _c.execute(
+            "DELETE FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = ?", (channel_id,)
+        )
     _conn.commit()
 
+
+# pylint: disable=too-many-locals,too-many-nested-blocks
 async def __create_private_voice_channel(member, setting) -> None:
     """
     Create a new private voice channel for a member.
@@ -425,7 +470,7 @@ async def __create_private_voice_channel(member, setting) -> None:
     try:
         overwrites = {
             member: _overwrites_channelowner,
-            guild.default_role: _overwrites_everyone
+            guild.default_role: _overwrites_everyone,
         }
         if public:
             overwrites[public_role or guild.default_role] = _overwrites_channelmember
@@ -435,9 +480,8 @@ async def __create_private_voice_channel(member, setting) -> None:
             for ch_name in existing_channels:
                 if ch_name.startswith(prefix):
                     try:
-                        number = int(ch_name[len(prefix):].replace('-', '').strip())
-                        if number > highest_number:
-                            highest_number = number
+                        number = int(ch_name[len(prefix) :].replace("-", "").strip())
+                        highest_number = max(highest_number, number)
                     except ValueError:
                         continue
             channel_name = f"{prefix} - {highest_number + 1}"
@@ -456,7 +500,7 @@ async def __create_private_voice_channel(member, setting) -> None:
                 description=(
                     "This is your private voice channel. You can use the following commands to manage it."
                 ),
-                color=discord.Color.blurple()
+                color=discord.Color.blurple(),
             )
             embed.add_field(
                 name="Commands",
@@ -469,26 +513,46 @@ async def __create_private_voice_channel(member, setting) -> None:
                     "**/pvoice_commander_region <region>** - Set the region for the channel.\n"
                     "**/pvoice_commander_rename <name>** - Rename the channel."
                 ),
-                inline=False
+                inline=False,
             )
             await channel.send(content=member.mention, embed=embed)
 
         # Add to the database
         _c.execute(
-            'INSERT INTO PRIVATEVOICE_OPENCHANNELS (guild_id, channel_id, channelowner_id, public, permit_update) VALUES (?, ?, ?, ?, ?)',
-            (guild.id, channel.id, 0 if public else member.id, public, permit_update)
+            "INSERT INTO PRIVATEVOICE_OPENCHANNELS "
+            "(guild_id, channel_id, channelowner_id, public, permit_update) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                guild.id,
+                channel.id,
+                0 if public else member.id,
+                public,
+                permit_update,
+            ),
         )
         await member.move_to(channel)
-        _logger.debug(f"Created a new private voice channel for {member} in {category}.")
+        _logger.debug(
+            f"Created a new private voice channel for {member} in {category}."
+        )
     except discord.HTTPException as e:
         _logger.error(f"Failed to create a private voice channel for {member}: {e}")
-        _c.execute('DELETE FROM PRIVATEVOICE_SETTINGS WHERE join_to_create_id = ?', (setting[2],))
+        _c.execute(
+            "DELETE FROM PRIVATEVOICE_SETTINGS WHERE join_to_create_id = ?",
+            (setting[2],),
+        )
         try:
-            await member.send(f"Failed to create a private voice channel for you in {category}. Please contact the server administrator.")
+            await member.send(
+                f"Failed to create a private voice channel for you in "
+                f"{category}. Please contact the server administrator."
+            )
         except discord.HTTPException:
-            _logger.error(f"Failed to send a message to {member} about the failed private voice channel creation.")
+            _logger.error(
+                f"Failed to send a message to {member} about the failed "
+                f"private voice channel creation."
+            )
     finally:
         _conn.commit()
+
 
 async def __handle_private_vc(member, after_channel_id, before_channel_id=None) -> None:
     """
@@ -507,6 +571,7 @@ async def __handle_private_vc(member, after_channel_id, before_channel_id=None) 
     Returns:
         None
     """
+
     async def __set_channel_member_permissions(member, after_channel_id):
         channel = member.guild.get_channel(after_channel_id)
         if __is_channel_flagged_public(after_channel_id):
@@ -514,49 +579,77 @@ async def __handle_private_vc(member, after_channel_id, before_channel_id=None) 
         current_permissions = channel.overwrites_for(member)
         if current_permissions != _overwrites_channelmember:
             await channel.set_permissions(member, overwrite=_overwrites_channelmember)
-            _logger.debug(f"Set permissions for member {member} in channel {after_channel_id}")
+            _logger.debug(
+                f"Set permissions for member {member} in channel {after_channel_id}"
+            )
 
-    _logger.debug(f"Handling private VC for {member}. After channel ID: {after_channel_id}, Before channel ID: {before_channel_id}")
+    _logger.debug(
+        f"Handling private VC for {member}. "
+        f"After channel ID: {after_channel_id}, "
+        f"Before channel ID: {before_channel_id}"
+    )
 
     _c.execute(
-        'SELECT * FROM PRIVATEVOICE_SETTINGS WHERE join_to_create_id = ?',
-        (after_channel_id,))
+        "SELECT * FROM PRIVATEVOICE_SETTINGS WHERE join_to_create_id = ?",
+        (after_channel_id,),
+    )
     pvoice_setting = _c.fetchone()
 
     if not pvoice_setting:
-        _logger.debug(f"No private voice settings found for channel ID: {after_channel_id}")
+        _logger.debug(
+            f"No private voice settings found for channel ID: {after_channel_id}"
+        )
 
         _c.execute(
-            'SELECT * FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id IN (?, ?)',
-            (member.guild.id, before_channel_id, after_channel_id))
+            "SELECT * FROM PRIVATEVOICE_OPENCHANNELS WHERE guild_id = ? AND channel_id IN (?, ?)",
+            (member.guild.id, before_channel_id, after_channel_id),
+        )
         pvoice_channels = _c.fetchall()
-        pvoice_before = next((channel for channel in pvoice_channels if channel[2] == before_channel_id), None)
-        pvoice_after = next((channel for channel in pvoice_channels if channel[2] == after_channel_id), None)
+        pvoice_before = next(
+            (channel for channel in pvoice_channels if channel[2] == before_channel_id),
+            None,
+        )
+        pvoice_after = next(
+            (channel for channel in pvoice_channels if channel[2] == after_channel_id),
+            None,
+        )
 
         match pvoice_before, pvoice_after:
             case None, None:
                 return
             case None, _:
-                _logger.debug(f"Member {member} joined private voice channel {after_channel_id}")
+                _logger.debug(
+                    f"Member {member} joined private voice channel {after_channel_id}"
+                )
                 if member.id != pvoice_after[3]:
-                    _logger.debug(f"Member {member} is not the channel owner, setting permissions")
+                    _logger.debug(
+                        f"Member {member} is not the channel owner, setting permissions"
+                    )
                     await __set_channel_member_permissions(member, after_channel_id)
-                return
             case _, None:
-                _logger.debug(f"Member {member} left private voice channel {before_channel_id}")
+                _logger.debug(
+                    f"Member {member} left private voice channel {before_channel_id}"
+                )
                 await __left_private_vc(member, before_channel_id)
-                return
             case _:
-                _logger.debug(f"Member {member} switched from private voice channel {before_channel_id} to {after_channel_id}")
+                _logger.debug(
+                    f"Member {member} switched from private voice channel {before_channel_id} to {after_channel_id}"
+                )
                 await __set_channel_member_permissions(member, after_channel_id)
                 await __left_private_vc(member, before_channel_id)
-                return
     else:
         await __create_private_voice_channel(member, pvoice_setting)
-        _logger.debug(f"Created private voice channel for member {member} with settings {pvoice_setting}")
-        if before_channel_id and __is_channel_in_private_voice_list(member, before_channel_id):
+        _logger.debug(
+            f"Created private voice channel for member {member} with settings {pvoice_setting}"
+        )
+        if before_channel_id and __is_channel_in_private_voice_list(
+            member, before_channel_id
+        ):
             await __left_private_vc(member, before_channel_id)
-            _logger.debug(f"Handled member {member} leaving private voice channel {before_channel_id}")
+            _logger.debug(
+                f"Handled member {member} leaving private voice channel {before_channel_id}"
+            )
+
 
 async def __is_channel_owner_in_current_vc(interaction: discord.Interaction) -> bool:
     """
@@ -573,17 +666,22 @@ async def __is_channel_owner_in_current_vc(interaction: discord.Interaction) -> 
         bool: True if the user is the owner of the private voice channel, False otherwise.
     """
     user = interaction.user
-    voice_channel_id = user.voice.channel.id if user.voice and user.voice.channel else None
+    voice_channel_id = (
+        user.voice.channel.id if user.voice and user.voice.channel else None
+    )
 
-    if not voice_channel_id or not __is_channel_in_private_voice_list(user, voice_channel_id):
+    if not voice_channel_id or not __is_channel_in_private_voice_list(
+        user, voice_channel_id
+    ):
         await interaction.response.send_message(
-            "You are not in a private voice channel.", ephemeral=True)
+            "You are not in a private voice channel.", ephemeral=True
+        )
         return False
 
     if not __is_channel_owner(user, voice_channel_id):
         await interaction.response.send_message(
-            "You are not the owner of the private voice channel.",
-            ephemeral=True)
+            "You are not the owner of the private voice channel.", ephemeral=True
+        )
         return False
 
     return True
@@ -623,17 +721,17 @@ async def _on_voice_state_update(member, before, after) -> None:
             _logger.debug(f"{member} disconnected from {before.channel}")
             if not __is_channel_in_private_voice_list(member, before_channel_id):
                 return
-            else:
-                await __left_private_vc(member, before_channel_id)
+            await __left_private_vc(member, before_channel_id)
         case _:
             return
+
 
 async def _on_channel_delete(channel) -> None:
     """
     Handle the deletion of a channel.
 
     This function is called whenever a channel is deleted in the Discord server.
-    It removes the corresponding entries from the PRIVATEVOICE_SETTINGS and 
+    It removes the corresponding entries from the PRIVATEVOICE_SETTINGS and
     PRIVATEVOICE_OPENCHANNELS tables in the database.
 
     Args:
@@ -642,26 +740,39 @@ async def _on_channel_delete(channel) -> None:
     Returns:
         None
     """
-    _c.executescript('''
+    _c.executescript(
+        """
         DELETE FROM PRIVATEVOICE_SETTINGS WHERE join_to_create_id = {channel_id};
         DELETE FROM PRIVATEVOICE_OPENCHANNELS WHERE channel_id = {channel_id};
-    '''.format(channel_id=channel.id))
+    """.format(
+            channel_id=channel.id
+        )
+    )
     _conn.commit()
 
 
 # Discord AppCommands (/)
-@discord.app_commands.command(name='pvoice_admin_add', description='Add a new private voice channel generator to the server.')
-@discord.app_commands.checks.has_permissions(manage_guild = True, manage_channels = True)
-@discord.app_commands.describe(channel='The channel that will create the private voice channels upon joining.',
-                               category='The category where the private voice channels will be created.',
-                               max_users='The maximum number of users that can join the private voice channel.',
-                               bitrate='The bitrate (8-384) of the private voice channel. (Defaults to 64, if not possible.)',
-                               permit_update='If the owner should be able to change the bitrate, region, name and user limit. (Doesn\'t affect public ones.',
-                               public='If the channel should be a public one by default.',
-                               public_role='The role that will be able to join the public channel. (Defaults to everyone.)',
-                               prefix='The prefix for the private voice channel name. (Required/used only for public channels.)'
-                              )
+@discord.app_commands.command(
+    name="pvoice_admin_add",
+    description="Add a new private voice channel generator to the server.",
+)
+@discord.app_commands.checks.has_permissions(manage_guild=True, manage_channels=True)
+@discord.app_commands.describe(
+    channel="The channel that will create the private voice channels upon joining.",
+    category="The category where the private voice channels will be created.",
+    max_users="The maximum number of users that can join the private voice channel.",
+    bitrate="The bitrate (8-384) of the private voice channel. "
+    "(Defaults to 64, if not possible.)",
+    permit_update="If the owner should be able to change the bitrate, "
+    "region, name and user limit. (Doesn't affect public ones.",
+    public="If the channel should be a public one by default.",
+    public_role="The role that will be able to join the public channel. "
+    "(Defaults to everyone.)",
+    prefix="The prefix for the private voice channel name. "
+    "(Required/used only for public channels.)",
+)
 @discord.app_commands.guild_only
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 async def __pvoice_admin_add(
     interaction: discord.Interaction,
     channel: discord.VoiceChannel,
@@ -671,7 +782,7 @@ async def __pvoice_admin_add(
     bitrate: int = 64,
     public: bool = False,
     public_role: discord.Role = None,
-    prefix: str = ''
+    prefix: str = "",
 ) -> None:
     """
     Add a new private voice channel generator to the server.
@@ -686,39 +797,52 @@ async def __pvoice_admin_add(
         category (discord.CategoryChannel): The category where the private voice channels will be created.
         max_users (int): The maximum number of users that can join the private voice channel.
         permit_update (bool): If the owner should be able to change the bitrate, region, name, and user limit.
-        bitrate (int, optional): The bitrate (8-384) of the private voice channel. Defaults to 64.
-        public (bool, optional): If the channel should be a public one by default. Defaults to False.
-        public_role (discord.Role, optional): The role that will be able to join the public channel. Defaults to None.
-        prefix (str, optional): The prefix for the private voice channel name. Required/used only for public channels. Defaults to ''.
+        bitrate (int, optional):
+            The bitrate (8-384) of the private voice channel. Defaults to 64.
+        public (bool, optional):
+            If the channel should be a public one by default. Defaults to False.
+        public_role (discord.Role, optional):
+            The role that will be able to join the public channel. Defaults to None.
+        prefix (str, optional):
+            The prefix for the private voice channel name.
+            Required/used only for public channels. Defaults to ''.
 
     Returns:
         None
     """
     if not interaction.guild:
         await interaction.response.send_message(
-            "This command can only be used in a server.", ephemeral=True)
+            "This command can only be used in a server.", ephemeral=True
+        )
         return
 
     if public and not prefix.strip():
         await interaction.response.send_message(
-            "The prefix is required for public channels.", ephemeral=True)
+            "The prefix is required for public channels.", ephemeral=True
+        )
         return
 
     _c.execute(
-        'SELECT 1 FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?',
-        (interaction.guild.id, channel.id))
+        "SELECT 1 FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?",
+        (interaction.guild.id, channel.id),
+    )
     update = _c.fetchone() is not None
 
-    _c.execute('SELECT COUNT(*) FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ?',
-               (interaction.guild.id,))
+    _c.execute(
+        "SELECT COUNT(*) FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ?",
+        (interaction.guild.id,),
+    )
     if _c.fetchone()[0] >= 20:
         await interaction.response.send_message(
             "You have reached the maximum number of private voice channel generators for this server (20).",
-            ephemeral=True)
+            ephemeral=True,
+        )
         return
 
-    if not (0 <= max_users <= 99):
-        await interaction.response.send_message("The maximum number of users must be between 0 and 99.", ephemeral=True)
+    if not 0 <= max_users <= 99:
+        await interaction.response.send_message(
+            "The maximum number of users must be between 0 and 99.", ephemeral=True
+        )
         return
 
     if bitrate < 8:
@@ -736,7 +860,10 @@ async def __pvoice_admin_add(
 
     if update:
         _c.execute(
-            'UPDATE PRIVATEVOICE_SETTINGS SET category_id = ?, max_users = ?, bitrate = ?, public = ?, public_role = ?, permit_update = ?, prefix = ? WHERE guild_id = ? AND join_to_create_id = ?',
+            "UPDATE PRIVATEVOICE_SETTINGS SET "
+            "category_id = ?, max_users = ?, bitrate = ?, public = ?, "
+            "public_role = ?, permit_update = ?, prefix = ? "
+            "WHERE guild_id = ? AND join_to_create_id = ?",
             (
                 category.id,
                 max_users,
@@ -746,35 +873,60 @@ async def __pvoice_admin_add(
                 permit_update,
                 prefix.strip(),
                 interaction.guild.id,
-                channel.id)
-            )
+                channel.id,
+            ),
+        )
     else:
-        _c.execute('INSERT INTO PRIVATEVOICE_SETTINGS (guild_id, join_to_create_id, category_id, max_users, bitrate, public, public_role, permit_update, prefix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (
-                       interaction.guild.id,
-                       channel.id,
-                       category.id,
-                       max_users,
-                       bitrate,
-                       public,
-                       public_role.id if public_role else None,
-                       permit_update,
-                       prefix.strip()
-                   )
+        _c.execute(
+            "INSERT INTO PRIVATEVOICE_SETTINGS "
+            "(guild_id, join_to_create_id, category_id, max_users, "
+            "bitrate, public, public_role, permit_update, prefix) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                interaction.guild.id,
+                channel.id,
+                category.id,
+                max_users,
+                bitrate,
+                public,
+                public_role.id if public_role else None,
+                permit_update,
+                prefix.strip(),
+            ),
         )
     _conn.commit()
 
+    msg = (
+        f"Private voice channel generator has been "
+        f"{'updated' if update else 'added'} successfully.\n\n"
+        f"**Channel:** {channel.mention}\n"
+        f"**Category:** {category.mention}\n"
+        f"**Max Users:** {'\u221E' if max_users == 0 else max_users}\n"
+        f"**Bitrate:** {bitrate}kbps\n"
+        f"**Allow updates:** {permit_update}\n"
+        f"**Prefix:** {prefix}\n"
+        f"**Public:** {public}\n"
+        f"**Public Role:** {'' if not public_role else public_role.mention}"
+    )
     await interaction.response.send_message(
-        f"Private voice channel generator has been {'updated' if update else 'added'} successfully.\n\n**Channel:** {channel.mention}\n**Category:** {category.mention}\n**Max Users:** {'\u221E' if max_users == 0 else max_users}\n**Bitrate:** {bitrate}kbps\n**Allow updates:** {permit_update}\n**Prefix:** {prefix}\n**Public:** {public}\n**Public Role:** {"" if not public_role else public_role.mention}",
-        ephemeral=True)
+        msg,
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_admin_remove', description='Remove a private voice channel generator from the server.')
-@discord.app_commands.describe(channel='The channel that creates the private voice channels upon joining.',
-                               remove='Should the channel be removed also?'
-                               )
-@discord.app_commands.checks.has_permissions(manage_guild = True, manage_channels = True)
+
+@discord.app_commands.command(
+    name="pvoice_admin_remove",
+    description="Remove a private voice channel generator from the server.",
+)
+@discord.app_commands.describe(
+    channel="The channel that creates the private voice channels upon joining.",
+    remove="Should the channel be removed also?",
+)
+@discord.app_commands.checks.has_permissions(manage_guild=True, manage_channels=True)
 @discord.app_commands.guild_only
-async def __pvoice_admin_remove(interaction: discord.Interaction, channel: discord.VoiceChannel, remove: bool) -> None:
+async def __pvoice_admin_remove(
+    interaction: discord.Interaction, channel: discord.VoiceChannel, remove: bool
+) -> None:
     """
     Remove a private voice channel generator from the server.
 
@@ -791,28 +943,38 @@ async def __pvoice_admin_remove(interaction: discord.Interaction, channel: disco
         None
     """
     _c.execute(
-        'SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?',
-        (interaction.guild.id, channel.id))
+        "SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?",
+        (interaction.guild.id, channel.id),
+    )
     if not _c.fetchone():
         await interaction.response.send_message(
-            "This channel is not a private voice channel generator.", ephemeral=True)
+            "This channel is not a private voice channel generator.", ephemeral=True
+        )
         return
-    _c.execute('DELETE FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?',
-               (interaction.guild.id, channel.id))
+    _c.execute(
+        "DELETE FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?",
+        (interaction.guild.id, channel.id),
+    )
     _conn.commit()
     if remove:
         try:
             await channel.delete()
-        except:
+        except (discord.Forbidden, discord.HTTPException) as e:
+            _logger.error(f"Failed to remove channel: {e}")
             await interaction.response.send_message(
-                "Failed to remove the channel.", ephemeral=True)
+                "Failed to remove the channel.", ephemeral=True
+            )
             return
     await interaction.response.send_message(
-        "Private voice channel generator has been removed successfully.",
-        ephemeral=True)
+        "Private voice channel generator has been removed successfully.", ephemeral=True
+    )
 
-@discord.app_commands.command(name='pvoice_admin_list', description='List all private voice channel generators in the server.')
-@discord.app_commands.checks.has_permissions(manage_guild = True, manage_channels = True)
+
+@discord.app_commands.command(
+    name="pvoice_admin_list",
+    description="List all private voice channel generators in the server.",
+)
+@discord.app_commands.checks.has_permissions(manage_guild=True, manage_channels=True)
 @discord.app_commands.guild_only
 async def __pvoice_admin_list(interaction: discord.Interaction) -> None:
     """
@@ -828,29 +990,47 @@ async def __pvoice_admin_list(interaction: discord.Interaction) -> None:
     Returns:
         None
     """
-    _c.execute('SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ?',
-               (interaction.guild.id, ))
+    _c.execute(
+        "SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ?",
+        (interaction.guild.id,),
+    )
     settings = _c.fetchall()
     if not settings:
         await interaction.response.send_message(
-            "No private voice channel generators found.", ephemeral=True)
+            "No private voice channel generators found.", ephemeral=True
+        )
         return
-    embed = discord.Embed(title="Private Voice Channels",
-                          color=discord.Color.blurple())
+    embed = discord.Embed(title="Private Voice Channels", color=discord.Color.blurple())
     for setting in settings:
         channel = interaction.guild.get_channel(setting[2])
         category = interaction.guild.get_channel(setting[3])
+        max_users_display = "\u221e" if setting[4] == 0 else setting[4]
+        public_role_display = "" if not setting[6] else f"<@&{setting[6]}>"
         embed.add_field(
             name=f"Channel: {channel.name}",
-            value=
-            f"Category: {category.name}\nMax Users: {'\u221E' if setting[4] == 0 else setting[4]}\nBitrate: {setting[5]}kbps\nAllow updates: {setting[8]}\nPrefix: {setting[9]}\nPublic: {setting[6]}\n**Public Role:** {"" if not setting[6] else "<@&setting[6]>"}",
-            inline=False)
+            value=(
+                f"Category: {category.name}\n"
+                f"Max Users: {max_users_display}\n"
+                f"Bitrate: {setting[5]}kbps\n"
+                f"Allow updates: {setting[8]}\n"
+                f"Prefix: {setting[9]}\n"
+                f"Public: {setting[6]}\n"
+                f"**Public Role:** {public_role_display}"
+            ),
+            inline=False,
+        )
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@discord.app_commands.command(name='pvoice_commander_add', description='Add a user to your current private voice channel.')
-@discord.app_commands.describe(member = 'The member to add to the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_add",
+    description="Add a user to your current private voice channel.",
+)
+@discord.app_commands.describe(member="The member to add to the private voice channel.")
 @discord.app_commands.guild_only
-async def __pvoice_commander_add(interaction: discord.Interaction, member: discord.Member) -> None:
+async def __pvoice_commander_add(
+    interaction: discord.Interaction, member: discord.Member
+) -> None:
     """
     Add a user to your current private voice channel.
 
@@ -868,21 +1048,29 @@ async def __pvoice_commander_add(interaction: discord.Interaction, member: disco
     if not await __is_channel_owner_in_current_vc(interaction):
         return
 
-    channel = interaction.guild.get_channel(
-        interaction.user.voice.channel.id)
+    channel = interaction.guild.get_channel(interaction.user.voice.channel.id)
     if len(channel.members) >= channel.user_limit:
         await interaction.response.send_message(
-            "The private voice channel is full.", ephemeral=True)
+            "The private voice channel is full.", ephemeral=True
+        )
         return
     await channel.set_permissions(member, overwrite=_overwrites_channelmember)
     await interaction.response.send_message(
-        f"User {member} has been added to the private voice channel.",
-        ephemeral=True)
+        f"User {member} has been added to the private voice channel.", ephemeral=True
+    )
 
-@discord.app_commands.command(name='pvoice_commander_remove', description='Remove a user from your current private voice channel.')
-@discord.app_commands.describe(member = 'The member to remove from the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_remove",
+    description="Remove a user from your current private voice channel.",
+)
+@discord.app_commands.describe(
+    member="The member to remove from the private voice channel."
+)
 @discord.app_commands.guild_only
-async def __pvoice_commander_remove(interaction: discord.Interaction, member: discord.Member) -> None:
+async def __pvoice_commander_remove(
+    interaction: discord.Interaction, member: discord.Member
+) -> None:
     """
     Remove a user from your current private voice channel.
 
@@ -904,17 +1092,27 @@ async def __pvoice_commander_remove(interaction: discord.Interaction, member: di
     if member not in channel.overwrites:
         await interaction.response.send_message(
             f"User {member.mention} is not in the private voice channel.",
-            ephemeral=True)
+            ephemeral=True,
+        )
         return
     await channel.set_permissions(member, overwrite=None)
     await interaction.response.send_message(
         f"User {member.mention} has been removed from the private voice channel.",
-        ephemeral=True)
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_commander_kick', description='Kick a user from your current private voice channel.')
-@discord.app_commands.describe(member = 'The member to kick from the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_kick",
+    description="Kick a user from your current private voice channel.",
+)
+@discord.app_commands.describe(
+    member="The member to kick from the private voice channel."
+)
 @discord.app_commands.guild_only
-async def __pvoice_commander_kick(interaction: discord.Interaction, member: discord.Member) -> None:
+async def __pvoice_commander_kick(
+    interaction: discord.Interaction, member: discord.Member
+) -> None:
     """
     Kick a user from your current private voice channel.
 
@@ -936,17 +1134,27 @@ async def __pvoice_commander_kick(interaction: discord.Interaction, member: disc
     if member not in channel.members:
         await interaction.response.send_message(
             f"User {member.mention} is not in the private voice channel.",
-            ephemeral=True)
+            ephemeral=True,
+        )
         return
     await member.move_to(None)
     await interaction.response.send_message(
         f"User {member.mention} has been kicked from the private voice channel.",
-        ephemeral=True)
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_commander_limit', description='Set the user limit for your current private voice channel.')
-@discord.app_commands.describe(limit = 'The maximum number of users allowed in the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_limit",
+    description="Set the user limit for your current private voice channel.",
+)
+@discord.app_commands.describe(
+    limit="The maximum number of users allowed in the private voice channel."
+)
 @discord.app_commands.guild_only
-async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int) -> None:
+async def __pvoice_commander_limit(
+    interaction: discord.Interaction, limit: int
+) -> None:
     """
     Set the user limit for your current private voice channel.
 
@@ -963,7 +1171,8 @@ async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int)
     """
     if limit < 0 or limit > 99:
         await interaction.response.send_message(
-            "The user limit must be between 0 and 99.", ephemeral=True)
+            "The user limit must be between 0 and 99.", ephemeral=True
+        )
         return
 
     if not await __is_channel_owner_in_current_vc(interaction):
@@ -972,17 +1181,28 @@ async def __pvoice_commander_limit(interaction: discord.Interaction, limit: int)
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
-            "You are not allowed to change the user limit of the private voice channel.", ephemeral=True)
+            "You are not allowed to change the user limit of the private voice channel.",
+            ephemeral=True,
+        )
         return
     await channel.edit(user_limit=limit)
     await interaction.response.send_message(
         f"User limit for the private voice channel has been set to {limit}.",
-        ephemeral=True)
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_commander_bitrate', description='Set the bitrate for your current private voice channel.')
-@discord.app_commands.describe(bitrate = 'The bitrate (8-384) of the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_bitrate",
+    description="Set the bitrate for your current private voice channel.",
+)
+@discord.app_commands.describe(
+    bitrate="The bitrate (8-384) of the private voice channel."
+)
 @discord.app_commands.guild_only
-async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: int) -> None:
+async def __pvoice_commander_bitrate(
+    interaction: discord.Interaction, bitrate: int
+) -> None:
     """
     Set the bitrate for your current private voice channel.
 
@@ -1002,7 +1222,9 @@ async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: 
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
-            "You are not allowed to change the bitrate of the private voice channel.", ephemeral=True)
+            "You are not allowed to change the bitrate of the private voice channel.",
+            ephemeral=True,
+        )
         return
 
     if bitrate < 8:
@@ -1020,35 +1242,45 @@ async def __pvoice_commander_bitrate(interaction: discord.Interaction, bitrate: 
     await channel.edit(bitrate=bitrate * 1000)
     await interaction.response.send_message(
         f"Bitrate for the private voice channel has been set to {bitrate}kbps.",
-        ephemeral=True)
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_commander_region', description='Set the region for your current private voice channel.')
-@discord.app_commands.describe(region = 'The region for the private voice channel.')
-@discord.app_commands.choices(region = [
-    discord.app_commands.Choice(name='<Automatic>', value=""),
-    discord.app_commands.Choice(name='Brazil', value='brazil'),
-    discord.app_commands.Choice(name='Hong Kong', value='hongkong'),
-    discord.app_commands.Choice(name='India', value='india'),
-    discord.app_commands.Choice(name='Japan', value='japan'),
-    discord.app_commands.Choice(name='Rotterdam', value='rotterdam'),
-    discord.app_commands.Choice(name='Russia', value='russia'),
-    discord.app_commands.Choice(name='Singapore', value='singapore'),
-    discord.app_commands.Choice(name='South Korea', value='south-korea'),
-    discord.app_commands.Choice(name='South Africa', value='southafrica'),
-    discord.app_commands.Choice(name='Sydney', value='sydney'),
-    discord.app_commands.Choice(name='US Central', value='us-central'),
-    discord.app_commands.Choice(name='US East', value='us-east'),
-    discord.app_commands.Choice(name='US South', value='us-south'),
-    discord.app_commands.Choice(name='US West', value='us-west'),
-])
+
+@discord.app_commands.command(
+    name="pvoice_commander_region",
+    description="Set the region for your current private voice channel.",
+)
+@discord.app_commands.describe(region="The region for the private voice channel.")
+@discord.app_commands.choices(
+    region=[
+        discord.app_commands.Choice(name="<Automatic>", value=""),
+        discord.app_commands.Choice(name="Brazil", value="brazil"),
+        discord.app_commands.Choice(name="Hong Kong", value="hongkong"),
+        discord.app_commands.Choice(name="India", value="india"),
+        discord.app_commands.Choice(name="Japan", value="japan"),
+        discord.app_commands.Choice(name="Rotterdam", value="rotterdam"),
+        discord.app_commands.Choice(name="Russia", value="russia"),
+        discord.app_commands.Choice(name="Singapore", value="singapore"),
+        discord.app_commands.Choice(name="South Korea", value="south-korea"),
+        discord.app_commands.Choice(name="South Africa", value="southafrica"),
+        discord.app_commands.Choice(name="Sydney", value="sydney"),
+        discord.app_commands.Choice(name="US Central", value="us-central"),
+        discord.app_commands.Choice(name="US East", value="us-east"),
+        discord.app_commands.Choice(name="US South", value="us-south"),
+        discord.app_commands.Choice(name="US West", value="us-west"),
+    ]
+)
 @discord.app_commands.guild_only
-async def __pvoice_commander_region(interaction: discord.Interaction, region: str) -> None:
+async def __pvoice_commander_region(
+    interaction: discord.Interaction, region: str
+) -> None:
     """
     Set the region for your current private voice channel.
 
-    This command allows the owner of a private voice channel to set the region for the channel.
-    It checks if the command is used in a server, verifies that the user issuing the command is the owner
-    of the private voice channel, and then sets the region to the specified value.
+    This command allows the owner of a private voice channel to set the
+    region for the channel. It checks if the command is used in a server,
+    verifies that the user issuing the command is the owner of the private
+    voice channel, and then sets the region to the specified value.
 
     Args:
         interaction (discord.Interaction): The interaction object representing the command invocation.
@@ -1062,17 +1294,26 @@ async def __pvoice_commander_region(interaction: discord.Interaction, region: st
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
-            "You are not allowed to change the region of the private voice channel.", ephemeral=True)
+            "You are not allowed to change the region of the private voice channel.",
+            ephemeral=True,
+        )
         return
-    await channel.edit(rtc_region=None if region == '' else region)
+    await channel.edit(rtc_region=None if region == "" else region)
     await interaction.response.send_message(
         f"Region for the private voice channel has been set to {'**automatic**' if region == '' else '**' + region + '**'}.",
-        ephemeral=True)
+        ephemeral=True,
+    )
 
-@discord.app_commands.command(name='pvoice_commander_rename', description='Rename your current private voice channel.')
-@discord.app_commands.describe(name = 'The new name for the private voice channel.')
+
+@discord.app_commands.command(
+    name="pvoice_commander_rename",
+    description="Rename your current private voice channel.",
+)
+@discord.app_commands.describe(name="The new name for the private voice channel.")
 @discord.app_commands.guild_only
-async def __pvoice_commander_rename(interaction: discord.Interaction, name: str) -> None:
+async def __pvoice_commander_rename(
+    interaction: discord.Interaction, name: str
+) -> None:
     """
     Rename your current private voice channel.
 
@@ -1092,17 +1333,16 @@ async def __pvoice_commander_rename(interaction: discord.Interaction, name: str)
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
-            "You are not allowed to rename the private voice channel.", ephemeral=True)
+            "You are not allowed to rename the private voice channel.", ephemeral=True
+        )
         return
 
     await channel.edit(name=name)
     await interaction.response.send_message(
-        f"Private voice channel has been renamed to {name}.",
-        ephemeral=True)
+        f"Private voice channel has been renamed to {name}.", ephemeral=True
+    )
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("This module is not meant to be run directly.")
     sys.exit(1)

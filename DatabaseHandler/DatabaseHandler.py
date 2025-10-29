@@ -2,9 +2,9 @@ import asyncio
 import logging
 import re
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
-from functools import lru_cache
 
 
 class BaseDatabaseBackend(ABC):
@@ -86,7 +86,7 @@ class SQLiteBackend(BaseDatabaseBackend):
             "PRAGMA mmap_size=268435456",
             "PRAGMA busy_timeout=5000",
         ]
-        
+
         for pragma in pragmas:
             await self.connection.execute(pragma)
 
@@ -946,7 +946,7 @@ class AsyncDatabaseHandler:
 
         # Create backend
         backend_class = cls.BACKENDS[db_type]
-        
+
         # Pass pool parameters to backends that support it
         if db_type in ("mysql", "mariadb", "postgresql"):
             backend = backend_class(

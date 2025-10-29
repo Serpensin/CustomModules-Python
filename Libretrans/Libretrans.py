@@ -1,5 +1,7 @@
-import aiohttp
 import asyncio
+
+import aiohttp
+
 
 class Errors:
     class InvalidAPIKey(Exception):
@@ -11,16 +13,24 @@ class Errors:
             super().__init__(message)
 
     class Forbidden(Exception):
-        def __init__(self, message="Forbidden: The API key is invalid or the request is not authorized."):
+        def __init__(
+            self,
+            message="Forbidden: The API key is invalid or the request is not authorized.",
+        ):
             super().__init__(message)
 
     class RateLimitExceeded(Exception):
-        def __init__(self, message="Rate Limit Exceeded: The request was rate limited."):
+        def __init__(
+            self, message="Rate Limit Exceeded: The request was rate limited."
+        ):
             super().__init__(message)
 
     class InternalServerError(Exception):
-        def __init__(self, message="Internal Server Error: The server encountered an error."):
+        def __init__(
+            self, message="Internal Server Error: The server encountered an error."
+        ):
             super().__init__(message)
+
 
 class API:
     """
@@ -39,7 +49,7 @@ class API:
             Errors.InvalidAPIKey: If the provided API key is invalid.
         """
         self.APIkey = APIkey
-        self.url = url.rstrip('/')
+        self.url = url.rstrip("/")
         if not asyncio.run(self.validate_key()):
             raise Errors.InvalidAPIKey()
 
@@ -55,11 +65,11 @@ class API:
             str: The sample text.
         """
         if isFile:
-            with open(text, 'r') as file:
+            with open(text, "r") as file:
                 text = file.read()
 
-        first_words = text.split(' ')
-        return ' '.join(first_words[:20])
+        first_words = text.split(" ")
+        return " ".join(first_words[:20])
 
     async def detect(self, text) -> dict:
         """
@@ -96,9 +106,11 @@ class API:
                     elif response.status == 500:
                         raise Errors.InternalServerError(response_data)
             except aiohttp.ClientConnectorDNSError:
-                raise Errors.InvalidAPIKey("Invalid URL or unable to connect to the server.")
+                raise Errors.InvalidAPIKey(
+                    "Invalid URL or unable to connect to the server."
+                )
 
-    async def translate_text(self, text, dest_lang, source='') -> str:
+    async def translate_text(self, text, dest_lang, source="") -> str:
         """
         Asynchronously translate a given text to the specified destination language.
 
@@ -116,15 +128,20 @@ class API:
             Errors.RateLimitExceeded: If the request was rate limited.
             Errors.InternalServerError: If the server encountered an error.
         """
-        url = f'{self.url}/translate'
+        url = f"{self.url}/translate"
         if not source:
             source = (await self.detect(self._get_sample(text)))["data"][0]["language"]
-        params = {"q": text, "source": source, "target": dest_lang, "api_key": self.APIkey}
+        params = {
+            "q": text,
+            "source": source,
+            "target": dest_lang,
+            "api_key": self.APIkey,
+        }
         async with aiohttp.ClientSession() as session:
             async with session.post(url, params=params) as response:
                 data = await response.json()
                 if response.status == 200:
-                    return data['translatedText']
+                    return data["translatedText"]
                 elif response.status == 400:
                     raise Errors.BadRequest(data)
                 elif response.status == 403:
@@ -134,7 +151,7 @@ class API:
                 elif response.status == 500:
                     raise Errors.InternalServerError(data)
 
-    async def translate_file(self, file, dest_lang, source='') -> str:
+    async def translate_file(self, file, dest_lang, source="") -> str:
         """
         Asynchronously translate the content of a file to the specified destination language.
 
@@ -152,20 +169,24 @@ class API:
             Errors.RateLimitExceeded: If the request was rate limited.
             Errors.InternalServerError: If the server encountered an error.
         """
-        url = f'{self.url}/translate_file'
+        url = f"{self.url}/translate_file"
         if not source:
-            source = (await self.detect(self._get_sample(file, True)))['data'][0]['language']
+            source = (await self.detect(self._get_sample(file, True)))["data"][0][
+                "language"
+            ]
         form = aiohttp.FormData()
-        form.add_field('source', source)
-        form.add_field('target', dest_lang)
-        form.add_field('api_key', self.APIkey)
-        with open(file, 'rb') as f:
-            form.add_field('file', f, filename=file, content_type='application/octet-stream')
+        form.add_field("source", source)
+        form.add_field("target", dest_lang)
+        form.add_field("api_key", self.APIkey)
+        with open(file, "rb") as f:
+            form.add_field(
+                "file", f, filename=file, content_type="application/octet-stream"
+            )
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, data=form) as response:
                     data = await response.json()
                     if response.status == 200:
-                        return data['translatedFileUrl']
+                        return data["translatedFileUrl"]
                     elif response.status == 400:
                         raise Errors.BadRequest(data)
                     elif response.status == 403:
@@ -182,7 +203,7 @@ class API:
         Returns:
             dict: A dictionary containing the settings data.
         """
-        url = f'{self.url}/frontend/settings'
+        url = f"{self.url}/frontend/settings"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 return await response.json()
@@ -203,16 +224,16 @@ class API:
         Returns:
             list: A list of supported languages.
         """
-        url = f'{self.url}/languages'
+        url = f"{self.url}/languages"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 return await response.json()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     libretransAPIkey = ""
     libretransURL = ""
 
     translator = API(APIkey=libretransAPIkey, url=libretransURL)
-    print(asyncio.run(translator.translate_text("Hello, how are you?", 'de')))
-    print(asyncio.run(translator.translate_file('translation_test.txt', 'de')))
+    print(asyncio.run(translator.translate_text("Hello, how are you?", "de")))
+    print(asyncio.run(translator.translate_file("translation_test.txt", "de")))

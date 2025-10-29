@@ -30,6 +30,7 @@ class TwitchAPI:
     get_category_image(category_id)
         Get image for category ID
     """
+
     def __init__(self, client_id, client_secret):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -56,7 +57,7 @@ class TwitchAPI:
         params = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "grant_type": "client_credentials"
+            "grant_type": "client_credentials",
         }
         response = r.post(url, params=params)
 
@@ -100,7 +101,7 @@ class TwitchAPI:
         """
         headers = {
             "Authorization": f"Bearer {self.access_token}",
-            "Client-ID": self.client_id
+            "Client-ID": self.client_id,
         }
         url = f"https://api.twitch.tv/helix/games?name={game_name}"
         async with aiohttp.ClientSession(headers=headers) as session:
@@ -126,7 +127,10 @@ class TwitchAPI:
         dict
             Stats for category ID. Keys: viewer_count, stream_count, average_viewer_count, category_rank
         """
-        headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
+        headers = {
+            "Client-ID": self.client_id,
+            "Authorization": f"Bearer {self.access_token}",
+        }
         params = {"game_id": category_id}
 
         total_viewer_count = 0
@@ -150,7 +154,9 @@ class TwitchAPI:
                             total_viewer_count += stream["viewer_count"]
                             total_stream_count += 1
 
-        average_viewer_count = total_viewer_count / total_stream_count if total_stream_count > 0 else 0
+        average_viewer_count = (
+            total_viewer_count / total_stream_count if total_stream_count > 0 else 0
+        )
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.top, params={"first": "100"}) as response:
@@ -158,13 +164,20 @@ class TwitchAPI:
                     return response.status
                 data = await response.json()
 
-                category_rank = next((i + 1 for i, category in enumerate(data["data"]) if category["id"] == category_id), 0)
+                category_rank = next(
+                    (
+                        i + 1
+                        for i, category in enumerate(data["data"])
+                        if category["id"] == category_id
+                    ),
+                    0,
+                )
 
         return {
             "viewer_count": total_viewer_count,
             "stream_count": total_stream_count,
             "average_viewer_count": average_viewer_count,
-            "category_rank": category_rank
+            "category_rank": category_rank,
         }
 
     async def get_top_streamers(self, category_id) -> dict | str:
@@ -181,7 +194,10 @@ class TwitchAPI:
         dict
             Top streamers for category ID. Keys: streamer_name, viewer_count, follower_count, stream_title, started_at, language, thumbnail_url, link
         """
-        headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
+        headers = {
+            "Client-ID": self.client_id,
+            "Authorization": f"Bearer {self.access_token}",
+        }
         params = {"game_id": category_id, "first": "4"}
 
         async with aiohttp.ClientSession(headers=headers) as session:
@@ -196,8 +212,10 @@ class TwitchAPI:
                             "title": stream["title"],
                             "started_at": stream["started_at"],
                             "language": stream["language"],
-                            "thumbnail": stream["thumbnail_url"].format(width="1920", height="1080"),
-                            "link": f"https://www.twitch.tv/{stream['user_name']}"
+                            "thumbnail": stream["thumbnail_url"].format(
+                                width="1920", height="1080"
+                            ),
+                            "link": f"https://www.twitch.tv/{stream['user_name']}",
                         }
                         for i, stream in enumerate(data["data"])
                     }
@@ -212,7 +230,10 @@ class TwitchAPI:
         int
             API points remaining
         """
-        headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
+        headers = {
+            "Client-ID": self.client_id,
+            "Authorization": f"Bearer {self.access_token}",
+        }
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.users) as response:
@@ -232,14 +253,19 @@ class TwitchAPI:
         str
             Image URL for category ID
         """
-        headers = {"Client-ID": self.client_id, "Authorization": f"Bearer {self.access_token}"}
+        headers = {
+            "Client-ID": self.client_id,
+            "Authorization": f"Bearer {self.access_token}",
+        }
         url = f"https://api.twitch.tv/helix/games?id={category_id}"
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    return data["data"][0]["box_art_url"].format(width="320", height="440")
+                    return data["data"][0]["box_art_url"].format(
+                        width="320", height="440"
+                    )
                 return f"Error {response.status}: Could not retrieve image for category {category_id}"
 
 

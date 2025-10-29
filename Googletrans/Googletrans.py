@@ -22,7 +22,9 @@ class API:
             Exception: If failed to verify credentials.
         """
         self.credentials_path = credentials_path
-        self.translate_client = translate_v2.Client.from_service_account_json(self.credentials_path)
+        self.translate_client = translate_v2.Client.from_service_account_json(
+            self.credentials_path
+        )
 
         if not self.check_credentials():
             raise Exception("Failed to verify credentials.")
@@ -37,9 +39,11 @@ class API:
         Returns:
             str: The first 20 words or less of the input text.
         """
-        return ' '.join(text.split()[:20])
+        return " ".join(text.split()[:20])
 
-    def translate_text(self, text: str, target_language: str, source_language: str = "") -> str:
+    def translate_text(
+        self, text: str, target_language: str, source_language: str = ""
+    ) -> str:
         """
         Translates text from a source language to a target language.
 
@@ -56,7 +60,9 @@ class API:
             RefreshError: If there is an error refreshing credentials.
         """
         try:
-            result = self.translate_client.translate(text, target_language=target_language, source_language=source_language)
+            result = self.translate_client.translate(
+                text, target_language=target_language, source_language=source_language
+            )
             return result["translatedText"]
         except (FileNotFoundError, RefreshError) as e:
             raise e
@@ -115,7 +121,7 @@ class API:
             raise e
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     credentials_path = "googleauth.json"
     translator = API(credentials_path)
 

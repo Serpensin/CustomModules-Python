@@ -1,5 +1,6 @@
-﻿import discord
-from typing import Optional
+﻿from typing import Optional
+
+import discord
 
 
 class Translator(discord.app_commands.Translator):
@@ -19,7 +20,7 @@ class Translator(discord.app_commands.Translator):
                 "botinfo": "ボット情報",
                 "Get information about the bot.": "ボットに関する情報を取得します。",
                 "change_nickname": "ニックネームを変更する",
-            }
+            },
         }
 
     async def load(self) -> None:
@@ -29,10 +30,12 @@ class Translator(discord.app_commands.Translator):
         """
         pass
 
-    async def translate(self,
-                        string: discord.app_commands.locale_str,
-                        locale: discord.Locale,
-                        context: discord.app_commands.TranslationContext) -> Optional[str]:
+    async def translate(
+        self,
+        string: discord.app_commands.locale_str,
+        locale: discord.Locale,
+        context: discord.app_commands.TranslationContext,
+    ) -> Optional[str]:
         """
         Translates a given string to the specified locale.
 

@@ -2,7 +2,8 @@ import aiohttp
 import html2text
 from bs4 import BeautifulSoup
 
-async def get_killswitch(return_type: str = 'html') -> str | None:
+
+async def get_killswitch(return_type: str = "html") -> str | None:
     """
     Gets the current Kill Switch status from the official Dead by Daylight website.
 
@@ -25,21 +26,25 @@ async def get_killswitch(return_type: str = 'html') -> str | None:
     -----
     The content is retrieved from https://forums.bhvr.com/dead-by-daylight/kb/articles/299-kill-switch-master-list.
     """
-    if return_type not in ['html', 'md']:
-        raise ValueError("Invalid return type. Return type needs to be either 'html' or 'md'.")
+    if return_type not in ["html", "md"]:
+        raise ValueError(
+            "Invalid return type. Return type needs to be either 'html' or 'md'."
+        )
 
-    url = 'https://forums.bhvr.com/dead-by-daylight/kb/articles/299-kill-switch-master-list'
+    url = "https://forums.bhvr.com/dead-by-daylight/kb/articles/299-kill-switch-master-list"
     converter = html2text.HTML2Text()
     converter.ignore_links = True
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             page_content = await response.text()
-            soup = BeautifulSoup(page_content, 'html.parser')
+            soup = BeautifulSoup(page_content, "html.parser")
 
             # Find the required sections
-            kill_switch_section = soup.find('h2', {'data-id': 'kill-switch-disabled'})
-            known_issues_section = soup.find('h2', {'data-id': 'known-issues-not-disabled'})
+            kill_switch_section = soup.find("h2", {"data-id": "kill-switch-disabled"})
+            known_issues_section = soup.find(
+                "h2", {"data-id": "known-issues-not-disabled"}
+            )
 
             if not kill_switch_section or not known_issues_section:
                 return None
@@ -50,21 +55,23 @@ async def get_killswitch(return_type: str = 'html') -> str | None:
                 if sibling == known_issues_section:
                     break
                 # Remove any images
-                for img in sibling.find_all('img'):
+                for img in sibling.find_all("img"):
                     img.decompose()
                 content.append(str(sibling))
 
             # Convert the content to the required format
-            content = '\n'.join(content)
+            content = "\n".join(content)
             if not content:
                 return None
-            if return_type == 'html':
+            if return_type == "html":
                 return content
             return converter.handle(content)
 
     return None
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import asyncio
-    md = asyncio.run(get_killswitch('md'))
+
+    md = asyncio.run(get_killswitch("md"))
     print(md)

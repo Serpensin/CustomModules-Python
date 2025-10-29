@@ -1,23 +1,29 @@
-import aiohttp
 import asyncio
 import http
+
+import aiohttp
 from bs4 import BeautifulSoup
+
 
 class Errors:
     class Private(Exception):
         """Custom error indicating an attempt to access a private profile."""
+
         def __init__(self, message="This profile is private."):
             super().__init__(message)
 
     class RateLimit(Exception):
         """Custom error indicating the exceeding of a rate limit."""
+
         def __init__(self, message="Rate limit exceeded."):
             super().__init__(message)
 
     class InvalidKey(Exception):
         """Custom error indicating that the key is invalid."""
+
         def __init__(self, message="Invalid key."):
             super().__init__(message)
+
 
 class API:
     def __init__(self, key):
@@ -30,11 +36,11 @@ class API:
             Errors.InvalidKey: If the provided API key is invalid.
         """
         self.KEY = key
-        self.URL_GetOwnedGames = f'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={key}&steamid='
-        self.URL_ResolveVanity = f'http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl='
-        self.URL_GetPlayerAchievements = f'https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={key}&steamid='
-        self.URL_GetPlayerSummeries = f'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={key}&steamids='
-        self.URL_GetAppDetails = 'https://store.steampowered.com/api/appdetails?appids='
+        self.URL_GetOwnedGames = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={key}&steamid="
+        self.URL_ResolveVanity = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl="
+        self.URL_GetPlayerAchievements = f"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={key}&steamid="
+        self.URL_GetPlayerSummeries = f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={key}&steamids="
+        self.URL_GetAppDetails = "https://store.steampowered.com/api/appdetails?appids="
 
         if not asyncio.run(self.keyIsValid()):
             raise Errors.InvalidKey()
@@ -47,11 +53,13 @@ class API:
             bool: True if the key is valid, False otherwise.
         """
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'{self.URL_GetPlayerSummeries}76561198889439823') as response:
+            async with session.get(
+                f"{self.URL_GetPlayerSummeries}76561198889439823"
+            ) as response:
                 if response.status != 200:
                     return False
                 data = await response.json()
-        return 'response' in data and 'players' in data['response']
+        return "response" in data and "players" in data["response"]
 
     async def get_player_summeries(self, steamid) -> dict:
         """
@@ -66,15 +74,22 @@ class API:
             Errors.RateLimit: If the API rate limit is exceeded.
             ValueError: If the provided Steam ID or link is invalid.
         """
-        steamids = steamid.split(',')
-        cleaned_steamids = ','.join([await self.link_to_id(sid.strip()) for sid in steamids])
-        url = f'{self.URL_GetPlayerSummeries}{cleaned_steamids}'
+        steamids = steamid.split(",")
+        cleaned_steamids = ",".join(
+            [await self.link_to_id(sid.strip()) for sid in steamids]
+        )
+        url = f"{self.URL_GetPlayerSummeries}{cleaned_steamids}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 429:
                     raise Errors.RateLimit()
                 if response.status != 200:
-                    return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                    return {
+                        "error": {
+                            "code": response.status,
+                            "message": http.HTTPStatus(response.status).phrase,
+                        }
+                    }
                 return await response.json()
 
     async def get_player_achievements(self, steamid, appid) -> dict:
@@ -93,14 +108,19 @@ class API:
         """
         steamid = await self.link_to_id(steamid)
         if steamid is None:
-            raise ValueError('Invalid steamid or link.')
-        url = f'{self.URL_GetPlayerAchievements}{steamid}&appid={appid}'
+            raise ValueError("Invalid steamid or link.")
+        url = f"{self.URL_GetPlayerAchievements}{steamid}&appid={appid}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 429:
                     raise Errors.RateLimit()
                 if response.status != 200:
-                    return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                    return {
+                        "error": {
+                            "code": response.status,
+                            "message": http.HTTPStatus(response.status).phrase,
+                        }
+                    }
                 return await response.json()
 
     async def link_to_id(self, link) -> str:
@@ -116,18 +136,22 @@ class API:
             Errors.RateLimit: If the API rate limit is exceeded.
             ValueError: If the provided Steam ID or link is invalid.
         """
-        link = link.replace('https://steamcommunity.com/profiles/', '').replace('https://steamcommunity.com/id/', '').replace('/', '')
+        link = (
+            link.replace("https://steamcommunity.com/profiles/", "")
+            .replace("https://steamcommunity.com/id/", "")
+            .replace("/", "")
+        )
         if len(link) == 17 and link.isdigit():
             return link
-        url = f'{self.URL_ResolveVanity}{link}'
+        url = f"{self.URL_ResolveVanity}{link}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 429:
                     raise Errors.RateLimit()
                 if response.status != 200:
-                    raise ValueError('Invalid steamid or link.')
+                    raise ValueError("Invalid steamid or link.")
                 data = await response.json()
-        return data['response']['steamid'] if data['response']['success'] == 1 else None
+        return data["response"]["steamid"] if data["response"]["success"] == 1 else None
 
     async def ownsGame(self, steamid, appid) -> bool:
         """
@@ -146,19 +170,24 @@ class API:
         """
         steamid = await self.link_to_id(steamid)
         if steamid is None:
-            raise ValueError('Invalid steamid or link.')
-        url = f'{self.URL_GetOwnedGames}{steamid}'
+            raise ValueError("Invalid steamid or link.")
+        url = f"{self.URL_GetOwnedGames}{steamid}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 429:
                     raise Errors.RateLimit()
                 if response.status != 200:
-                    return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                    return {
+                        "error": {
+                            "code": response.status,
+                            "message": http.HTTPStatus(response.status).phrase,
+                        }
+                    }
                 data = await response.json()
         try:
-            return any(game['appid'] == appid for game in data['response']['games'])
+            return any(game["appid"] == appid for game in data["response"]["games"])
         except KeyError:
-            if data == {'response': {}}:
+            if data == {"response": {}}:
                 raise Errors.Private()
             return False
 
@@ -174,14 +203,20 @@ class API:
         Raises:
             Errors.RateLimit: If the API rate limit is exceeded.
         """
-        url = f'{self.URL_GetAppDetails}{appid}'
+        url = f"{self.URL_GetAppDetails}{appid}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == 429:
                     raise Errors.RateLimit()
                 if response.status != 200:
-                    return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                    return {
+                        "error": {
+                            "code": response.status,
+                            "message": http.HTTPStatus(response.status).phrase,
+                        }
+                    }
                 return await response.json()
+
 
 async def GetFreePromotions() -> list:
     """
@@ -205,20 +240,31 @@ async def GetFreePromotions() -> list:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status != 200:
-                return {"error": {"code": response.status, "message": http.HTTPStatus(response.status).phrase}}
+                return {
+                    "error": {
+                        "code": response.status,
+                        "message": http.HTTPStatus(response.status).phrase,
+                    }
+                }
             html = await response.text()
-            
-    soup = BeautifulSoup(html, 'html.parser')
-    return [game.get('data-ds-appid') for game in soup.find_all('a', class_='search_result_row') if game.get('data-ds-appid')]
+
+    soup = BeautifulSoup(html, "html.parser")
+    return [
+        game.get("data-ds-appid")
+        for game in soup.find_all("a", class_="search_result_row")
+        if game.get("data-ds-appid")
+    ]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
-        api = API('')
+        api = API("")
     except Errors.InvalidKey as e:
         print(e)
     try:
-        print(asyncio.run(api.get_player_summeries('Schlangensuende, 76561197969978546')))
+        print(
+            asyncio.run(api.get_player_summeries("Schlangensuende, 76561197969978546"))
+        )
         print(asyncio.run(api.get_app_details(570)))
     except Errors.Private as e:
         print(e)
