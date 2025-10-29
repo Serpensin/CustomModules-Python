@@ -24,24 +24,24 @@ def read_requirements(module_name):
             return deps
     return []
 
-# Define extras for each module
+# Define extras for each module (using lowercase for PyPI compatibility)
 extras_require = {
-    'AppTranslation': read_requirements('AppTranslation'),
-    'BitmapHandler': read_requirements('BitmapHandler'),
-    'BotDirectory': read_requirements('BotDirectory'),
-    'DatabaseHandler': read_requirements('DatabaseHandler'),
-    'Googletrans': read_requirements('Googletrans'),
-    'InviteTracker': read_requirements('InviteTracker'),
-    'Killswitch': read_requirements('Killswitch'),
-    'Libretrans': read_requirements('Libretrans'),
-    'LogHandler': read_requirements('LogHandler'),
-    'Patchnotes': read_requirements('Patchnotes'),
-    'PrivateVoice': read_requirements('PrivateVoice'),
-    'RandomUsernames': read_requirements('RandomUsernames'),
-    'StatDock': read_requirements('StatDock'),
-    'Steam': read_requirements('Steam'),
-    'SteamCharts': read_requirements('SteamCharts'),
-    'Twitch': read_requirements('Twitch'),
+    'apptranslation': read_requirements('AppTranslation'),
+    'bitmaphandler': read_requirements('BitmapHandler'),
+    'botdirectory': read_requirements('BotDirectory'),
+    'databasehandler': read_requirements('DatabaseHandler'),
+    'googletrans': read_requirements('Googletrans'),
+    'invitetracker': read_requirements('InviteTracker'),
+    'killswitch': read_requirements('Killswitch'),
+    'libretrans': read_requirements('Libretrans'),
+    'loghandler': read_requirements('LogHandler'),
+    'patchnotes': read_requirements('Patchnotes'),
+    'privatevoice': read_requirements('PrivateVoice'),
+    'randomusernames': read_requirements('RandomUsernames'),
+    'statdock': read_requirements('StatDock'),
+    'steam': read_requirements('Steam'),
+    'steamcharts': read_requirements('SteamCharts'),
+    'twitch': read_requirements('Twitch'),
 }
 
 # Create 'all' extra that includes all dependencies

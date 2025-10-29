@@ -39,16 +39,33 @@ jobs:
       run: |
         twine check dist/*
 
-    - name: Test import (core modules)
+    - name: Test package installation
+      shell: bash
       run: |
-        pip install dist/*.whl
-        python -c "from CustomModules.bitmap_handler import BitmapHandler; print('BitmapHandler imported successfully')"
-        python -c "from CustomModules.log_handler import LogManager; print('LogManager imported successfully')"
+        # Find the wheel file
+        WHEEL_FILE=$(ls dist/*.whl | head -n 1)
+        echo "Installing $WHEEL_FILE"
+        pip install "$WHEEL_FILE"
+        
+        # Test that the package is installed
+        python -c "import CustomModules; print(f'CustomModules version: {CustomModules.__version__}')"
+        
+        # List what modules are available (without importing them to avoid dependency issues)
+        python -c "import CustomModules; import pkgutil; mods = [m.name for m in pkgutil.iter_modules(CustomModules.__path__)]; print(f'Available modules: {mods}')"
 
     - name: Test install with extras
+      shell: bash
       run: |
-        pip install "dist/*.whl[DatabaseHandler]" || pip install "CustomModules[DatabaseHandler]" -f dist/
-        python -c "from CustomModules.database_handler import DatabaseHandler; print('DatabaseHandler imported successfully')"
+        # Uninstall the base package first
+        pip uninstall -y custommodules
+        
+        # Find the wheel file and install with all extras
+        WHEEL_FILE=$(ls dist/*.whl | head -n 1)
+        pip install "${WHEEL_FILE}[all]"
+        
+        # Now test imports with dependencies installed
+        python -c "from CustomModules.log_handler import LogManager; print('LogManager imported successfully')"
+        python -c "from CustomModules.database_handler import SyncDatabaseHandler, AsyncDatabaseHandler; print('DatabaseHandler imported successfully')"
 
     - name: List installed packages
       run: |

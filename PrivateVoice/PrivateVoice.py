@@ -896,12 +896,14 @@ async def __pvoice_admin_add(
         )
     _conn.commit()
 
+    infinity_symbol = '\u221E'
+    max_users_display = infinity_symbol if max_users == 0 else max_users
     msg = (
         f"Private voice channel generator has been "
         f"{'updated' if update else 'added'} successfully.\n\n"
         f"**Channel:** {channel.mention}\n"
         f"**Category:** {category.mention}\n"
-        f"**Max Users:** {'\u221E' if max_users == 0 else max_users}\n"
+        f"**Max Users:** {max_users_display}\n"
         f"**Bitrate:** {bitrate}kbps\n"
         f"**Allow updates:** {permit_update}\n"
         f"**Prefix:** {prefix}\n"
