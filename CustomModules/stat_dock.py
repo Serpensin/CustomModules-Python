@@ -16,6 +16,7 @@ from CustomModules.bitmap_handler import BitmapHandler
 
 # SQL query constants
 SQL_DELETE_STATDOCK_BY_CHANNEL = "DELETE FROM `STATDOCK` WHERE `channel_id` = ?"
+ERR_GUILD_ONLY = "This command can only be used in a guild."
 
 _overwrites = discord.PermissionOverwrite(
     create_instant_invite=False,
@@ -95,8 +96,8 @@ _bitmap = [
 def setup(
     client: discord.Client,
     tree: discord.app_commands.CommandTree,
-    connection: sqlite3.Connection = None,
-    logger: logging.Logger = None,
+    connection: Optional[sqlite3.Connection] = None,
+    logger: Optional[logging.Logger] = None,
 ) -> None:
     global _c, _conn, _bot, _logger, _bitmap
     _conn, _bot, _bitmap = connection, client, BitmapHandler(_bitmap)
@@ -199,8 +200,8 @@ async def _init_dock(
     stat_type: Literal["time", "role", "member"],
     timezone: str,
     timeformat: str,
-    role: discord.Role,
-    prefix: str,
+    role: Optional[discord.Role],
+    prefix: Optional[str],
     frequency: int,
     countbots: bool = False,
     countusers: bool = False,
@@ -454,8 +455,10 @@ async def _count_members_in_guild(
 
 
 async def _count_members_by_role(
-    role: discord.Role, countbots: bool, countusers: bool
+    role: Optional[discord.Role], countbots: bool, countusers: bool
 ) -> int:
+    if role is None:
+        return 0
     members_in_role = [
         member
         for member in role.members
@@ -601,7 +604,7 @@ async def _statdock_add(
     stat_type: str,
     category: discord.CategoryChannel,
     frequency: int,
-    prefix: str = None,
+    prefix: Optional[str] = None,
     timezone: str = "Europe/Berlin",
     timeformat: str = "%H:%M",
     countbots: bool = False,
@@ -611,11 +614,15 @@ async def _statdock_add(
     countcategory: bool = False,
     countstage: bool = False,
     countforum: bool = False,
-    role: discord.Role = None,
+    role: Optional[discord.Role] = None,
 ) -> None:
 
     if not category:
         await interaction.response.send_message("How did we get here?", ephemeral=True)
+        return
+
+    if interaction.guild is None:
+        await interaction.response.send_message(ERR_GUILD_ONLY, ephemeral=True)
         return
 
     if stat_type in ["role", "member"]:
@@ -651,6 +658,15 @@ async def _statdock_add(
     await interaction.response.send_message(
         "The stat dock is being created...", ephemeral=True
     )
+
+    # Type narrowing for stat_type
+    if stat_type not in ["time", "role", "member"]:
+        await interaction.edit_original_response(
+            content=f"Invalid stat_type: {stat_type}"
+        )
+        return
+    stat_type_literal: Literal["time", "role", "member"] = stat_type  # type: ignore
+
     try:
         created_channel = await interaction.guild.create_voice_channel(
             name="Loading...",
@@ -668,7 +684,7 @@ async def _statdock_add(
         guild=interaction.guild,
         category=category,
         channel=created_channel,
-        stat_type=stat_type,
+        stat_type=stat_type_literal,
         timezone=timezone,
         timeformat=timeformat,
         countbots=countbots,
@@ -724,7 +740,7 @@ async def _statdock_update(
     interaction: discord.Interaction,
     dock: discord.VoiceChannel,
     action: str,
-    prefix: str = None,
+    prefix: Optional[str] = None,
 ) -> None:
     await interaction.response.defer(ephemeral=True)
 
@@ -790,6 +806,10 @@ async def _statdock_update(
 @discord.app_commands.checks.has_permissions(manage_guild=True)
 async def _statdock_list(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
+
+    if interaction.guild is None:
+        await interaction.followup.send(ERR_GUILD_ONLY)
+        return
 
     _c.execute("SELECT * FROM STATDOCK WHERE `guild_id` = ?", (interaction.guild.id,))
     data = _c.fetchall()
@@ -867,6 +887,11 @@ async def _statdock_list(interaction: discord.Interaction) -> None:
 @discord.app_commands.checks.has_permissions(manage_guild=True)
 async def _statdock_enable_hidden(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
+
+    if interaction.guild is None:
+        await interaction.followup.send(ERR_GUILD_ONLY)
+        return
+
     _c.execute(
         "SELECT * FROM `STATDOCK` WHERE `enabled` = 0 AND `guild_id` = ?",
         (interaction.guild.id,),
