@@ -14,6 +14,9 @@ import pytz
 
 from CustomModules.bitmap_handler import BitmapHandler
 
+# SQL query constants
+SQL_DELETE_STATDOCK_BY_CHANNEL = "DELETE FROM `STATDOCK` WHERE `channel_id` = ?"
+
 _overwrites = discord.PermissionOverwrite(
     create_instant_invite=False,
     kick_members=False,
@@ -296,7 +299,7 @@ async def _re_init_dock(
             and (role := await _get_or_fetch("role", role_id)) is None
         )
     ):
-        _c.execute("DELETE FROM `STATDOCK` WHERE `channel_id` = ?", (channel_id,))
+        _c.execute(SQL_DELETE_STATDOCK_BY_CHANNEL, (channel_id,))
         _conn.commit()
         return
     try:
@@ -517,13 +520,13 @@ async def _get_or_fetch(item: str, item_id: int) -> Optional[Any]:
     return item_object
 
 
-def _isValidTimezone(timezone: str) -> bool:
-    if timezone not in pytz.all_timezones:
-        return False
-    return True
+def _is_valid_timezone(timezone: str) -> bool:
+    """Check if timezone is valid."""
+    return timezone in pytz.all_timezones
 
 
-def _isValidTimeformat(timeformat: str) -> bool:
+def _is_valid_timeformat(timeformat: str) -> bool:
+    """Check if timeformat is valid."""
     try:
         datetime.now().strftime(timeformat)
         return True
@@ -532,7 +535,14 @@ def _isValidTimeformat(timeformat: str) -> bool:
 
 
 def _get_current_time(timezone: str, time_format: str) -> str:
-    if not _isValidTimezone(timezone) or not _isValidTimeformat(time_format):
+    """Get current time formatted according to timezone and format."""
+    if not _is_valid_timezone(timezone) or not _is_valid_timeformat(time_format):
+        raise ValueError("Invalid timezone or format.")
+    return datetime.now(pytz.timezone(timezone)).strftime(time_format)
+
+
+async def _statdock_type_change(interaction, timezone, time_format):
+    if not _is_valid_timezone(timezone) or not _is_valid_timeformat(time_format):
         raise ValueError("Invalid timezone or format.")
 
     tz = pytz.timezone(timezone)
@@ -623,7 +633,7 @@ async def _statdock_add(
                 )
                 return
     elif stat_type == "time" and not (
-        _isValidTimezone(timezone) or _isValidTimeformat(timeformat)
+        _is_valid_timezone(timezone) or _is_valid_timeformat(timeformat)
     ):
         await interaction.response.send_message(
             "You either entered a wrong timezone, or format."
@@ -753,7 +763,7 @@ async def _statdock_update(
             await interaction.followup.send("Dock disabled.")
 
         case "delete":
-            _c.execute("DELETE FROM `STATDOCK` WHERE `channel_id` = ?", (dock.id,))
+            _c.execute(SQL_DELETE_STATDOCK_BY_CHANNEL, (dock.id,))
             await dock.delete()
             await interaction.followup.send("Dock deleted.")
 

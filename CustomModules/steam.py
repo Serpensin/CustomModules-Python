@@ -48,9 +48,9 @@ class API:
 
         self.KEY = key
         self.URL_GetOwnedGames = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={key}&steamid="
-        self.URL_ResolveVanity = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl="
+        self.URL_ResolveVanity = f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl="
         self.URL_GetPlayerAchievements = f"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={key}&steamid="
-        self.URL_GetPlayerSummeries = f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={key}&steamids="
+        self.URL_GetPlayerSummeries = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={key}&steamids="
         self.URL_GetAppDetails = "https://store.steampowered.com/api/appdetails?appids="
 
         if not asyncio.run(self.keyIsValid()):

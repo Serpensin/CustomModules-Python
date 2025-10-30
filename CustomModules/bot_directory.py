@@ -14,10 +14,10 @@ class Stats:
         self,
         bot,
         logger: Optional[logging.Logger] = None,
-        topgg_token="",
-        discordbots_token="",
-        discordbotlistcom_token="",
-        discordlist_token="",
+        topgg_token: str = "",
+        discordbots_token: str = "",
+        discordbotlistcom_token: str = "",
+        discordlist_token: str = "",
     ):
         # Setup logger with child hierarchy: parent -> CustomModules -> BotDirectory
         if logger:
