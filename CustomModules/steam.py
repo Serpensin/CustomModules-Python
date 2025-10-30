@@ -94,9 +94,13 @@ class API:
             ValueError: If the provided Steam ID or link is invalid.
         """
         steamids = steamid.split(",")
-        cleaned_steamids = ",".join(
-            [await self.link_to_id(sid.strip()) for sid in steamids]
-        )
+        resolved_ids = []
+        for sid in steamids:
+            resolved_id = await self.link_to_id(sid.strip())
+            if resolved_id is None:
+                raise ValueError(self.ERR_INVALID_STEAMID)
+            resolved_ids.append(resolved_id)
+        cleaned_steamids = ",".join(resolved_ids)
         url = f"{self.url_get_player_summeries}{cleaned_steamids}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
