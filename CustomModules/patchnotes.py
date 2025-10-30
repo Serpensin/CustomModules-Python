@@ -26,7 +26,9 @@ def set_logger(logger: Optional[logging.Logger] = None) -> None:
     _logger.debug("Patchnotes logger configured")
 
 
-async def get_update_content(version, return_type="html"):
+async def get_update_content(
+    version: str, return_type: str = "html"
+) -> Optional[str]:
     """
     Gets the content of the given update from a 3rd party website.
 
@@ -39,8 +41,8 @@ async def get_update_content(version, return_type="html"):
 
     Returns
     -------
-    str
-        The content of the update in the requested format.
+    Optional[str]
+        The content of the update in the requested format, or None if not found.
 
     Raises
     ------
@@ -130,6 +132,9 @@ if __name__ == "__main__":
 
     version = "6.7.1"
     content = asyncio.run(get_update_content(version, "md"))
-    print(content)
-    with open("Markdown.md", "w", encoding="utf-8") as f:
-        f.write(content)
+    if content:
+        print(content)
+        with open("Markdown.md", "w", encoding="utf-8") as f:
+            f.write(content)
+    else:
+        print(f"No patchnotes found for version {version}")

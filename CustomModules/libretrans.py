@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Optional
 
+import aiofiles
 import aiohttp
 
 
@@ -68,7 +69,7 @@ class API:
 
         self.logger.info("Libretrans API initialized successfully")
 
-    def _get_sample(self, text, is_file=False) -> str:
+    async def _get_sample(self, text: str, is_file: bool = False) -> str:
         """
         Extract a sample text from either a string or a file.
 
@@ -80,13 +81,13 @@ class API:
             str: The sample text.
         """
         if is_file:
-            with open(text, "r", encoding="utf-8") as file:
-                text = file.read()
+            async with aiofiles.open(text, "r", encoding="utf-8") as file:
+                text = await file.read()
 
         first_words = text.split(" ")
         return " ".join(first_words[:20])
 
-    async def detect(self, text) -> dict:
+    async def detect(self, text: str) -> dict:
         """
         Asynchronously detect the language of a given text.
 
@@ -119,27 +120,30 @@ class API:
                         self.logger.error(
                             f"Bad request during language detection: {data}"
                         )
-                        raise Errors.BadRequest(response_data)
+                        raise Errors.BadRequest(str(response_data))
                     elif response.status == 403:
                         self.logger.error(
                             f"Forbidden during language detection: {data}"
                         )
-                        raise Errors.Forbidden(response_data)
+                        raise Errors.Forbidden(str(response_data))
                     elif response.status == 429:
                         self.logger.warning(
                             f"Rate limit during language detection: {data}"
                         )
-                        raise Errors.RateLimitExceeded(response_data)
+                        raise Errors.RateLimitExceeded(str(response_data))
                     elif response.status == 500:
                         self.logger.error("Server error during language detection")
-                        raise Errors.InternalServerError(response_data)
+                        raise Errors.InternalServerError(str(response_data))
+                    else:
+                        self.logger.error(f"Unexpected status code: {response.status}")
+                        raise Errors.BadRequest(str(response_data))
             except aiohttp.ClientConnectorDNSError:
                 self.logger.error("DNS error - invalid URL or unable to connect")
                 raise Errors.InvalidAPIKey(
                     "Invalid URL or unable to connect to the server."
                 )
 
-    async def translate_text(self, text, dest_lang, source="") -> str:
+    async def translate_text(self, text: str, dest_lang: str, source: str = "") -> str:
         """
         Asynchronously translate a given text to the specified destination language.
 
@@ -162,7 +166,7 @@ class API:
         )
         url = f"{self.url}/translate"
         if not source:
-            detected = await self.detect(self._get_sample(text))
+            detected = await self.detect(await self._get_sample(text))
             source = detected["data"][0]["language"]
             self.logger.debug(f"Detected source language: {source}")
         params = {
@@ -189,9 +193,13 @@ class API:
                     self.logger.warning(f"Rate limit exceeded: {data}")
                     raise Errors.RateLimitExceeded(str(data))
                 elif response.status == 500:
-                    raise Errors.InternalServerError(data)
+                    self.logger.error(f"Server error: {data}")
+                    raise Errors.InternalServerError(str(data))
+                else:
+                    self.logger.error(f"Unexpected status code: {response.status}")
+                    raise Errors.BadRequest(str(data))
 
-    async def translate_file(self, file, dest_lang, source="") -> str:
+    async def translate_file(self, file: str, dest_lang: str, source: str = "") -> str:
         """
         Asynchronously translate the content of a file to the specified destination language.
 
@@ -214,7 +222,7 @@ class API:
         )
         url = f"{self.url}/translate_file"
         if not source:
-            source = (await self.detect(self._get_sample(file, True)))["data"][0][
+            source = (await self.detect(await self._get_sample(file, True)))["data"][0][
                 "language"
             ]
             self.logger.debug(f"Detected file language: {source}")
@@ -222,9 +230,13 @@ class API:
         form.add_field("source", source)
         form.add_field("target", dest_lang)
         form.add_field("api_key", self.api_key)
-        with open(file, "rb") as f:
+        async with aiofiles.open(file, "rb") as f:
+            file_content = await f.read()
             form.add_field(
-                "file", f, filename=file, content_type="application/octet-stream"
+                "file",
+                file_content,
+                filename=file,
+                content_type="application/octet-stream",
             )
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, data=form) as response:
@@ -248,8 +260,13 @@ class API:
                         )
                         raise Errors.RateLimitExceeded(str(data))
                     elif response.status == 500:
-                        self.logger.error("Server error during file translation")
+                        self.logger.error(
+                            f"Server error during file translation: {data}"
+                        )
                         raise Errors.InternalServerError(str(data))
+                    else:
+                        self.logger.error(f"Unexpected status code: {response.status}")
+                        raise Errors.BadRequest(str(data))
 
     async def get_settings(self) -> dict:
         """

@@ -204,6 +204,8 @@ class MySQLBackend(BaseDatabaseBackend):
     _CURRENT_TIMESTAMP_PATTERN = re.compile(
         r"DEFAULT\s+CURRENT_TIMESTAMP", re.IGNORECASE
     )
+    # Error message constant
+    DB_POOL_NOT_ESTABLISHED = "Database pool not established"
 
     def __init__(
         self,
@@ -284,7 +286,7 @@ class MySQLBackend(BaseDatabaseBackend):
         query, params = self.convert_query(query, params)
 
         if self.pool is None:
-            raise RuntimeError("Database pool not established")
+            raise RuntimeError(self.DB_POOL_NOT_ESTABLISHED)
 
         async with self.pool.acquire() as conn:
             async with conn.cursor(aiomysql.DictCursor) as cursor:
@@ -325,7 +327,7 @@ class MySQLBackend(BaseDatabaseBackend):
         query, _ = self.convert_query(query)
 
         if self.pool is None:
-            raise RuntimeError("Database pool not established")
+            raise RuntimeError(self.DB_POOL_NOT_ESTABLISHED)
 
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
@@ -355,6 +357,9 @@ class PostgreSQLBackend(BaseDatabaseBackend):
         r"INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT", re.IGNORECASE
     )
     _ROWCOUNT_PATTERN = re.compile(r"\d+")
+
+    # String constants
+    DB_POOL_NOT_ESTABLISHED = "Database pool not established"
 
     def __init__(
         self,
@@ -482,7 +487,7 @@ class PostgreSQLBackend(BaseDatabaseBackend):
         params_tuple = self._normalize_params(params)
 
         if self.pool is None:
-            raise RuntimeError("Database pool not established")
+            raise RuntimeError(self.DB_POOL_NOT_ESTABLISHED)
 
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -531,7 +536,7 @@ class PostgreSQLBackend(BaseDatabaseBackend):
         params_tuple = self._normalize_params(params)
 
         if self.pool is None:
-            raise RuntimeError("Database pool not established")
+            raise RuntimeError(self.DB_POOL_NOT_ESTABLISHED)
 
         async with self.pool.connection() as conn:
             async with conn.cursor() as cursor:
@@ -582,7 +587,7 @@ class PostgreSQLBackend(BaseDatabaseBackend):
         query, _ = self.convert_query(query)
 
         if self.pool is None:
-            raise RuntimeError("Database pool not established")
+            raise RuntimeError(self.DB_POOL_NOT_ESTABLISHED)
 
         if self.driver == "asyncpg":
             async with self.pool.acquire() as conn:

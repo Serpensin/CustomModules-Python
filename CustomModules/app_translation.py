@@ -47,7 +47,6 @@ class Translator(discord.app_commands.Translator):
         Currently does nothing.
         """
         self.logger.debug("Load method called (currently no-op)")
-        pass
 
     async def translate(
         self,

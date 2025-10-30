@@ -205,10 +205,21 @@ class BitmapHandler:
         only_in_1 = bitkey1 & ~bitkey2
         only_in_2 = bitkey2 & ~bitkey1
 
+        # get_active_keys with single=False always returns List[str]
+        common_keys = self.get_active_keys(common, single=False)
+        only_in_1_keys = self.get_active_keys(only_in_1, single=False)
+        only_in_2_keys = self.get_active_keys(only_in_2, single=False)
+
         result = {
-            "common_keys": self.get_active_keys(common, single=False),  # type: ignore
-            "only_in_bitkey1": self.get_active_keys(only_in_1, single=False),  # type: ignore
-            "only_in_bitkey2": self.get_active_keys(only_in_2, single=False),  # type: ignore
+            "common_keys": (
+                common_keys if isinstance(common_keys, list) else [common_keys]
+            ),
+            "only_in_bitkey1": (
+                only_in_1_keys if isinstance(only_in_1_keys, list) else [only_in_1_keys]
+            ),
+            "only_in_bitkey2": (
+                only_in_2_keys if isinstance(only_in_2_keys, list) else [only_in_2_keys]
+            ),
         }
 
         self.logger.debug(
