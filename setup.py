@@ -14,77 +14,60 @@ def read_file(filename):
 # Define extras for each module (using lowercase for PyPI compatibility)
 extras_require = {
     'apptranslation': [
-        'aiohttp>=3.11.2',
-        'discord.py>=2.4.0',
-        'googletrans==4.0.0rc1',
-        'httpcore==1.0.7',
-        'httpx==0.28.1',
-        'libretranslatepy>=2.1.3',
-        'python-dotenv>=1.0.1',
-        'regex>=2024.11.6',
+        'discord.py>=2.3.0',
     ],
     'bitmaphandler': [],  # No external dependencies
     'botdirectory': [
-        'aiohttp>=3.11.2',
-        'discord.py>=2.4.0',
+        'aiohttp>=3.9.3',
     ],
     'databasehandler': [
-        'aiosqlite>=0.20.0',
+        'aiosqlite>=0.19.0',
         'aiomysql>=0.2.0',
-        'asyncpg>=0.30.0',
-        'motor>=3.7.0',
+        'asyncpg>=0.29.0',
+        'psycopg[binary,pool]>=3.1.0',
+        'motor>=3.3.0',
     ],
     'googletrans': [
-        'googletrans==4.0.0rc1',
-        'httpcore==1.0.7',
-        'httpx==0.28.1',
+        'google-cloud-translate>=3.15.3',
     ],
     'invitetracker': [
-        'aiohttp>=3.11.2',
-        'aiosqlite>=0.20.0',
-        'discord.py>=2.4.0',
-        'python-dotenv>=1.0.1',
+        'discord.py>=2.3.0',
     ],
     'killswitch': [
-        'aiohttp>=3.11.2',
+        'aiohttp>=3.9.3',
+        'html2text>=2024.2.26',
         'beautifulsoup4>=4.12.3',
     ],
     'libretrans': [
-        'libretranslatepy>=2.1.3',
+        'aiohttp>=3.9.3',
     ],
     'loghandler': [
         'colorama>=0.4.6',
     ],
     'patchnotes': [
-        'aiohttp>=3.11.2',
+        'aiohttp>=3.9.3',
+        'html2text>=2024.2.26',
         'beautifulsoup4>=4.12.3',
-        'regex>=2024.11.6',
     ],
     'privatevoice': [
-        'aiohttp>=3.11.2',
-        'aiosqlite>=0.20.0',
-        'discord.py>=2.4.0',
-        'python-dotenv>=1.0.1',
+        'discord.py>=2.3.0',
     ],
     'randomusernames': [],  # No external dependencies
     'statdock': [
-        'aiohttp>=3.11.2',
-        'aiosqlite>=0.20.0',
-        'discord.py>=2.4.0',
-        'pillow>=11.0.0',
-        'python-dotenv>=1.0.1',
+        'discord.py>=2.3.0',
         'pytz>=2024.2',
     ],
     'steam': [
-        'aiohttp>=3.11.2',
+        'aiohttp>=3.9.3',
         'beautifulsoup4>=4.12.3',
     ],
     'steamcharts': [
-        'aiohttp>=3.11.2',
+        'aiohttp>=3.9.3',
         'beautifulsoup4>=4.12.3',
     ],
     'twitch': [
-        'aiohttp>=3.11.2',
+        'aiohttp>=3.9.3',
+        'requests>=2.31.0',
     ],
 }
 
@@ -97,7 +80,7 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='CustomModules',
-    version='2.0.0',
+    version='2.0.1',
     author='Serpensin',
     description='A collection of custom Python modules for Discord bots and utilities',
     long_description=read_file('README.md'),

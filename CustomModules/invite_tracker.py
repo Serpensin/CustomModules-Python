@@ -1,12 +1,9 @@
 import asyncio
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from discord import AuditLogAction
 from discord.errors import Forbidden
 
-if TYPE_CHECKING:
-    import discord
 
 
 class Tracker:
