@@ -1,8 +1,29 @@
+import logging
 import re
+from typing import Optional
 
 import aiohttp
 import html2text
 from bs4 import BeautifulSoup
+
+# Module logger
+_logger: Optional[logging.Logger] = None
+
+
+def set_logger(logger: Optional[logging.Logger] = None) -> None:
+    """
+    Set the logger for this module.
+    
+    Args:
+        logger (Optional[logging.Logger]): Parent logger. If provided, creates a child logger
+        under CustomModules.Patchnotes. Defaults to None.
+    """
+    global _logger
+    if logger:
+        _logger = logger.getChild('CustomModules').getChild('Patchnotes')
+    else:
+        _logger = logging.getLogger('CustomModules.Patchnotes')
+    _logger.debug("Patchnotes logger configured")
 
 
 async def get_update_content(version, return_type="html"):
@@ -31,7 +52,12 @@ async def get_update_content(version, return_type="html"):
     -----
     The content is retrieved from https://dbd.tricky.lol/patchnotes.
     """
+    if _logger:
+        _logger.debug(f"Getting update content for version {version}, return type: {return_type}")
+    
     if return_type not in ["html", "md"]:
+        if _logger:
+            _logger.error(f"Invalid return type: {return_type}")
         raise ValueError(
             "Invalid return type. Return type needs to be either 'html' or 'md'."
         )
@@ -41,28 +67,45 @@ async def get_update_content(version, return_type="html"):
     converter.ignore_links = True
 
     version = __validate_and_format(version)
+    if _logger:
+        _logger.debug(f"Formatted version: {version}")
 
     async with aiohttp.ClientSession() as session:
+        if _logger:
+            _logger.debug(f"Fetching patchnotes from {url}")
         async with session.get(url) as response:
             page_content = await response.text()
             soup = BeautifulSoup(page_content, "html.parser")
             update_divs = soup.find_all("div", class_="update")
+            
+            if _logger:
+                _logger.debug(f"Found {len(update_divs)} update divs")
 
             for update_div in update_divs:
                 h1_tags = update_div.find_all("h1")
                 for h1 in h1_tags:
                     if version in h1.text:
+                        if _logger:
+                            _logger.info(f"Found matching patchnotes for version {version}")
                         if return_type == "html":
                             return update_div.prettify()
                         elif return_type == "md":
                             return converter.handle(update_div.prettify())
+    
+    if _logger:
+        _logger.warning(f"No patchnotes found for version {version}")
     return None
 
 
 def __validate_and_format(version):
+    if _logger:
+        _logger.debug(f"Validating version format: {version}")
+    
     if not re.fullmatch(r"([5-9]|[1-9]\d)\.\d\.\d", version) and not re.fullmatch(
         r"[5-9]\d{2}|[1-9]\d{3}", version
     ):
+        if _logger:
+            _logger.error(f"Invalid version format: {version}")
         raise ValueError(
             "Invalid version format. Version needs to be at least 5.0.0 or 500."
         )
@@ -70,7 +113,12 @@ def __validate_and_format(version):
     version = list(version)
     version.insert(-1, ".")
     version.insert(-3, ".")
-    return "".join(version)
+    formatted = "".join(version)
+    
+    if _logger:
+        _logger.debug(f"Formatted version from {version} to {formatted}")
+    
+    return formatted
 
 
 if __name__ == "__main__":

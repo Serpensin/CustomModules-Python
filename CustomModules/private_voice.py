@@ -55,9 +55,14 @@ def setup(
         _conn = sqlite3.connect("PrivateVoice.db")
         internal_db_connection = True
     _c = _conn.cursor()
-    if logger is None:
-        logger = logging.getLogger("null")
-        logger.addHandler(logging.NullHandler())
+    
+    # Setup logger with child hierarchy
+    if logger:
+        _logger = logger.getChild('CustomModules').getChild('PrivateVoice')
+    else:
+        _logger = logging.getLogger('CustomModules.PrivateVoice')
+    
+    _logger.info("PrivateVoice module initialized")
     _logger = logger.getChild("PrivateVoice")
 
     __setup_database()

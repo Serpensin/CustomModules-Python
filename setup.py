@@ -80,7 +80,7 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='CustomModules',
-    version='2.0.1',
+    version='2.0.2',
     author='Serpensin',
     description='A collection of custom Python modules for Discord bots and utilities',
     long_description=read_file('README.md'),

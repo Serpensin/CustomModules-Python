@@ -1,5 +1,7 @@
 import asyncio
 import http
+import logging
+from typing import Optional
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -26,15 +28,24 @@ class Errors:
 
 
 class API:
-    def __init__(self, key):
+    def __init__(self, key, logger: Optional[logging.Logger] = None):
         """
         Initialize the API object with the given API key.
 
         Args:
             key (str): The Steam API key.
+            logger (Optional[logging.Logger]): Parent logger. Defaults to None.
         Raises:
             Errors.InvalidKey: If the provided API key is invalid.
         """
+        # Setup logger with child hierarchy
+        if logger:
+            self.logger = logger.getChild('CustomModules').getChild('Steam')
+        else:
+            self.logger = logging.getLogger('CustomModules.Steam')
+        
+        self.logger.debug("Initializing Steam API")
+        
         self.KEY = key
         self.URL_GetOwnedGames = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={key}&steamid="
         self.URL_ResolveVanity = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={key}&vanityurl="
@@ -43,7 +54,10 @@ class API:
         self.URL_GetAppDetails = "https://store.steampowered.com/api/appdetails?appids="
 
         if not asyncio.run(self.keyIsValid()):
+            self.logger.error("Invalid Steam API key provided")
             raise Errors.InvalidKey()
+        
+        self.logger.info("Steam API initialized successfully")
 
     async def keyIsValid(self) -> bool:
         """

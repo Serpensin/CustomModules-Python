@@ -11,7 +11,10 @@ class BaseDatabaseBackend(ABC):
     """Abstract base class for database backends"""
 
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
-        self.logger: logging.Logger = logger or logging.getLogger(__name__)
+        if logger:
+            self.logger = logger.getChild('CustomModules').getChild('DatabaseHandler')
+        else:
+            self.logger = logging.getLogger('CustomModules.DatabaseHandler')
 
     @abstractmethod
     async def connect(self, connection_params: Dict[str, Any]) -> None:

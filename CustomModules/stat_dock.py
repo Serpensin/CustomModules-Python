@@ -105,10 +105,12 @@ def setup(
     if _conn is None:
         _conn = sqlite3.connect("StatDocks.db")
     _c = _conn.cursor()
-    if logger is None:
-        logger = logging.getLogger("null")
-        logger.addHandler(logging.NullHandler)
-    _logger = logger.getChild("StatDock")
+    
+    # Setup logger with child hierarchy
+    if logger:
+        _logger = logger.getChild('CustomModules').getChild('StatDock')
+    else:
+        _logger = logging.getLogger('CustomModules.StatDock')
 
     _setup_database()
 
@@ -117,7 +119,7 @@ def setup(
     tree.add_command(_statdock_update)
     tree.add_command(_statdock_enable_hidden)
 
-    _logger.info("Module has been set up.")
+    _logger.info("StatDock module has been set up.")
 
 
 async def task() -> None:

@@ -1,4 +1,6 @@
 import asyncio
+import logging
+from typing import Optional
 
 import aiohttp
 
@@ -7,47 +9,65 @@ class Stats:
     def __init__(
         self,
         bot,
-        logger=None,
+        logger: Optional[logging.Logger] = None,
         TOPGG_TOKEN="",
         DISCORDBOTS_TOKEN="",
         DISCORDBOTLISTCOM_TOKEN="",
         DISCORDLIST_TOKEN="",
     ):
+        # Setup logger with child hierarchy: parent -> CustomModules -> BotDirectory
+        if logger:
+            self.logger = logger.getChild('CustomModules').getChild('BotDirectory')
+        else:
+            self.logger = logging.getLogger('CustomModules.BotDirectory')
+        
+        self.logger.debug("Initializing Stats module")
+        
         self.bot = bot
-        self.logger = logger
         self.TOPGG_TOKEN = TOPGG_TOKEN
         self.DISCORDBOTS_TOKEN = DISCORDBOTS_TOKEN
         self.DISCORDBOTLISTCOM_TOKEN = DISCORDBOTLISTCOM_TOKEN
         self.DISCORDLIST_TOKEN = DISCORDLIST_TOKEN
 
         self._tasks = []
+        
+        active_tokens = sum([
+            bool(TOPGG_TOKEN),
+            bool(DISCORDBOTS_TOKEN),
+            bool(DISCORDBOTLISTCOM_TOKEN),
+            bool(DISCORDLIST_TOKEN)
+        ])
+        self.logger.info(f"Stats initialized with {active_tokens} active bot directory tokens")
 
     async def _post_stats(self, url, headers, json_data):
         """Post statistics to a given URL with error logging."""
+        self.logger.debug(f"Posting stats to {url}")
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=headers, json=json_data) as resp:
-                    if resp.status != 200 and self.logger:
+                    if resp.status != 200:
                         text = await resp.text()
                         self.logger.error(
                             f"Failed to update {url}: {resp.status} {text}"
                         )
+                    else:
+                        self.logger.debug(f"Successfully posted stats to {url}")
         except Exception as e:
-            if self.logger:
-                self.logger.error(f"Exception while posting stats to {url}: {e}")
+            self.logger.error(f"Exception while posting stats to {url}: {e}")
 
     async def _loop_post(self, url, headers, json_func, interval=60 * 30):
         """Generic loop for posting stats periodically."""
+        self.logger.debug(f"Starting stats update loop for {url} (interval: {interval}s)")
         while True:
             try:
                 json_data = json_func()
                 await self._post_stats(url, headers, json_data)
                 await asyncio.sleep(interval)
             except asyncio.CancelledError:
+                self.logger.debug(f"Stats loop for {url} cancelled")
                 break
             except Exception as e:
-                if self.logger:
-                    self.logger.error(f"Exception in stats loop for {url}: {e}")
+                self.logger.error(f"Exception in stats loop for {url}: {e}")
                 await asyncio.sleep(interval)
 
     def _topgg_data(self):
@@ -70,7 +90,10 @@ class Stats:
 
     def start_stats_update(self):
         """Start all stats update tasks in parallel."""
+        self.logger.info("Starting stats update tasks")
+        
         if self.TOPGG_TOKEN:
+            self.logger.debug("Configuring top.gg stats updates")
             url = f"https://top.gg/api/bots/{self.bot.user.id}/stats"
             headers = {
                 "Authorization": self.TOPGG_TOKEN,
@@ -81,6 +104,7 @@ class Stats:
             )
 
         if self.DISCORDBOTS_TOKEN:
+            self.logger.debug("Configuring discord.bots.gg stats updates")
             url = f"https://discord.bots.gg/api/v1/bots/{self.bot.user.id}/stats"
             headers = {
                 "Authorization": self.DISCORDBOTS_TOKEN,
@@ -93,6 +117,7 @@ class Stats:
             )
 
         if self.DISCORDBOTLISTCOM_TOKEN:
+            self.logger.debug("Configuring discordbotlist.com stats updates")
             url = f"https://discordbotlist.com/api/v1/bots/{self.bot.user.id}/stats"
             headers = {
                 "Authorization": self.DISCORDBOTLISTCOM_TOKEN,
@@ -105,6 +130,7 @@ class Stats:
             )
 
         if self.DISCORDLIST_TOKEN:
+            self.logger.debug("Configuring discordlist.gg stats updates")
             url = f"https://api.discordlist.gg/v0/bots/{self.bot.user.id}/guilds"
             headers = {
                 "Authorization": f"Bearer {self.DISCORDLIST_TOKEN}",
@@ -116,14 +142,17 @@ class Stats:
                 )
             )
 
+        self.logger.info(f"Started {len(self._tasks)} stats update tasks")
         return self._tasks
 
     async def stop_stats_update(self):
         """Cancel all running stats update tasks."""
+        self.logger.info(f"Stopping {len(self._tasks)} stats update tasks")
         for task in self._tasks:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
+        self.logger.debug("All stats update tasks stopped")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 import os
 import threading
+from typing import Optional
 
 from colorama import Fore, Style, init
 
@@ -14,9 +15,10 @@ class LogManager:
         log_folder (str): The folder where log files will be stored.
         app_folder_name (str): The name of the application, used for naming the log file.
         log_level (int): The logging level (e.g., logging.INFO).
+        logger (logging.Logger): Optional logger for meta-logging LogManager operations.
     """
 
-    def __init__(self, log_folder, app_folder_name, log_level="INFO"):
+    def __init__(self, log_folder, app_folder_name, log_level="INFO", logger: Optional[logging.Logger] = None):
         """
         Initializes the LogManager with the specified log folder, application folder name, and log level.
 
@@ -24,12 +26,25 @@ class LogManager:
             log_folder (str): The folder to store log files.
             app_folder_name (str): The name of the application.
             log_level (str): The log level as a string (e.g., 'INFO', 'DEBUG').
+            logger (Optional[logging.Logger]): Parent logger for meta-logging LogManager operations.
+            If provided, creates a child logger under CustomModules.LogHandler. Defaults to None.
         """
         init()  # Initialize colorama for colored console output.
+        
+        # Setup meta-logger with child hierarchy: parent -> CustomModules -> LogHandler
+        if logger:
+            self.logger = logger.getChild('CustomModules').getChild('LogHandler')
+        else:
+            self.logger = logging.getLogger('CustomModules.LogHandler')
+        
+        self.logger.debug(f"Initializing LogManager for app '{app_folder_name}' in folder '{log_folder}'")
+        
         self.log_folder = log_folder
         self.app_folder_name = app_folder_name
         self.log_level = self._get_log_level(log_level)
         self._lock = threading.Lock()  # Thread-safety lock for handler operations
+        
+        self.logger.info(f"LogManager initialized with log level {log_level}")
 
     def _get_log_level(self, log_level_str) -> int:
         """
@@ -60,12 +75,15 @@ class LogManager:
         Returns:
             logging.Logger: The configured logger.
         """
+        self.logger.debug(f"Creating logger: {logger_name}")
+        
         # Create the logger
         logger = logging.getLogger(logger_name)
         logger.setLevel(self.log_level)
 
         # Prevent duplicate handlers if logger already exists
         if logger.handlers:
+            self.logger.debug(f"Logger {logger_name} already has handlers, returning existing logger")
             return logger
 
         # Create a file handler that rotates logs at midnight
