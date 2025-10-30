@@ -1,5 +1,12 @@
 # Installation Guide
 
+## What's New in v2.0.2
+
+- **Universal Logger Support**: All 16 modules now support optional logger parameter
+- **Logger Hierarchy**: Child loggers follow pattern `parent.getChild('CustomModules').getChild('ModuleName')`
+- **Improved Code Quality**: 10/10 pylint score, black formatted, flake8 compliant
+- **Security**: Fixed dependencies, passed Snyk security scans
+
 ## For End Users
 
 ### Basic Installation
@@ -69,12 +76,17 @@ has_read = handler.check_key_in_bitkey('read', bitkey)
 
 ```python
 from CustomModules.log_handler import LogManager
+import logging
 
-# Create a log manager
+# Create a parent logger
+parent_logger = logging.getLogger('MyApp')
+
+# Create a log manager with parent logger
 log_manager = LogManager(
     log_folder='./logs',
     app_folder_name='MyApp',
-    log_level='INFO'
+    log_level='INFO',
+    logger=parent_logger  # Optional: enables meta-logging
 )
 
 # Get a logger
@@ -83,6 +95,32 @@ logger = log_manager.get_logger('my_module')
 # Use the logger
 logger.info('Application started')
 logger.error('An error occurred')
+```
+
+### Using Logger Support (v2.0.2+)
+
+All modules now support optional logger parameter:
+
+```python
+import logging
+from CustomModules.bitmap_handler import BitmapHandler
+from CustomModules.steam import API as SteamAPI
+
+# Create a parent logger
+logger = logging.getLogger('MyApp')
+
+# Class-based modules: pass logger to __init__
+bitmap = BitmapHandler(['read', 'write'], logger=logger)
+steam_api = SteamAPI(api_key='your_key', logger=logger)
+
+# Function-based modules: use set_logger()
+from CustomModules import killswitch, random_usernames
+killswitch.set_logger(logger)
+random_usernames.set_logger(logger)
+
+# Setup function modules: pass logger to setup()
+from CustomModules.stat_dock import setup as stat_dock_setup
+stat_dock_setup(client, tree, connection, logger=logger)
 ```
 
 ### Using DatabaseHandler

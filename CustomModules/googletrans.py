@@ -29,12 +29,14 @@ class API:
         """
         # Setup logger with child hierarchy: parent -> CustomModules -> Googletrans
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('Googletrans')
+            self.logger = logger.getChild("CustomModules").getChild("Googletrans")
         else:
-            self.logger = logging.getLogger('CustomModules.Googletrans')
-        
-        self.logger.debug(f"Initializing Google Translate API with credentials from {credentials_path}")
-        
+            self.logger = logging.getLogger("CustomModules.Googletrans")
+
+        self.logger.debug(
+            f"Initializing Google Translate API with credentials from {credentials_path}"
+        )
+
         self.credentials_path = credentials_path
         try:
             self.translate_client = translate_v2.Client.from_service_account_json(
@@ -47,8 +49,8 @@ class API:
 
         if not self.check_credentials():
             self.logger.error("Credential verification failed")
-            raise Exception("Failed to verify credentials.")
-        
+            raise ValueError("Failed to verify credentials.")
+
         self.logger.info("Google Translate API initialized successfully")
 
     def _get_sample(self, text) -> str:
@@ -81,13 +83,17 @@ class API:
             FileNotFoundError: If credentials file is not found.
             RefreshError: If there is an error refreshing credentials.
         """
-        self.logger.debug(f"Translating text to {target_language} (source: {source_language or 'auto'})")
+        self.logger.debug(
+            f"Translating text to {target_language} (source: {source_language or 'auto'})"
+        )
         try:
             result = self.translate_client.translate(
                 text, target_language=target_language, source_language=source_language
             )
             translated = result["translatedText"]
-            self.logger.debug(f"Translation successful: '{self._get_sample(text)}' -> '{self._get_sample(translated)}'")
+            self.logger.debug(
+                f"Translation successful: '{self._get_sample(text)}' -> '{self._get_sample(translated)}'"
+            )
             return translated
         except (FileNotFoundError, RefreshError) as e:
             self.logger.error(f"Translation failed: {e}")
@@ -108,7 +114,9 @@ class API:
         try:
             result = self.translate_client.translate("Ping", target_language="en")
             is_valid = result.get("translatedText") == "Ping"
-            self.logger.info(f"Credential verification: {'successful' if is_valid else 'failed'}")
+            self.logger.info(
+                f"Credential verification: {'successful' if is_valid else 'failed'}"
+            )
             return is_valid
         except (FileNotFoundError, RefreshError) as e:
             self.logger.error(f"Credential verification failed: {e}")

@@ -1,5 +1,74 @@
 # Development Guide
 
+## v2.0.2 Development Standards
+
+### Code Quality Requirements
+
+All code must pass:
+- ✅ **Black** formatting (line length 88)
+- ✅ **isort** import sorting
+- ✅ **flake8** linting (with E501 ignored)
+- ✅ **pylint** 10/10 score
+- ✅ **Snyk** security scans (zero issues)
+
+### Logger Support Pattern
+
+All modules must implement logger support:
+
+**Class-based modules:**
+```python
+from typing import Optional
+import logging
+
+class MyModule:
+    def __init__(self, ..., logger: Optional[logging.Logger] = None):
+        # Setup logger with child hierarchy
+        if logger:
+            self.logger = logger.getChild('CustomModules').getChild('MyModule')
+        else:
+            self.logger = logging.getLogger('CustomModules.MyModule')
+        
+        self.logger.debug("Initializing MyModule")
+        # ... rest of init
+```
+
+**Function-based modules:**
+```python
+from typing import Optional
+import logging
+
+_logger: Optional[logging.Logger] = None
+
+def set_logger(logger: Optional[logging.Logger] = None) -> None:
+    """Set the logger for this module."""
+    global _logger
+    if logger:
+        _logger = logger.getChild('CustomModules').getChild('MyModule')
+    else:
+        _logger = logging.getLogger('CustomModules.MyModule')
+    _logger.debug("MyModule logger configured")
+
+def my_function(...):
+    if _logger:
+        _logger.debug("Doing something...")
+    # ... rest of function
+```
+
+**Setup function modules:**
+```python
+def setup(client, tree, connection=None, logger: Optional[logging.Logger] = None):
+    global _logger
+    
+    # Setup logger with child hierarchy
+    if logger:
+        _logger = logger.getChild('CustomModules').getChild('MyModule')
+    else:
+        _logger = logging.getLogger('CustomModules.MyModule')
+    
+    _logger.info("MyModule initialized")
+    # ... rest of setup
+```
+
 ## Local Development and Testing
 
 ### Setting Up Local Development Environment
@@ -64,50 +133,46 @@ python validate_structure.py
 
 ## Adding a New Module
 
-1. Create a new directory for your module:
-   ```
-   NewModule/
-   ├── NewModule.py
-   └── requirements.txt
-   ```
-
-2. Create a wrapper file in the CustomModules directory:
+1. Create your module directly in the `CustomModules/` directory:
    ```python
    # CustomModules/new_module.py
-   """NewModule module - Description of what it does."""
-   import sys
-   import os
+   """NewModule - Description of what it does."""
+   from typing import Optional
+   import logging
    
-   # Add parent directory to path to allow importing from sibling directories
-   _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-   if _parent_dir not in sys.path:
-       sys.path.insert(0, _parent_dir)
-   
-   from NewModule.NewModule import *
+   class NewModule:
+       def __init__(self, ..., logger: Optional[logging.Logger] = None):
+           # Setup logger with child hierarchy
+           if logger:
+               self.logger = logger.getChild('CustomModules').getChild('NewModule')
+           else:
+               self.logger = logging.getLogger('CustomModules.NewModule')
+           
+           self.logger.debug("Initializing NewModule")
+           # ... rest of implementation
    ```
 
-3. Update `CustomModules/__init__.py`:
+2. Update `CustomModules/__init__.py`:
    - Add the module to the try-except import section
    - Add the module name to `__all__`
 
-4. Update `setup.py`:
-   - Add the module to `extras_require` dictionary
+3. Update `setup.py`:
+   - Add the module to `extras_require` dictionary if it has dependencies
 
-5. Update `setup.cfg` (if you're using it):
-   - Add the module to `[options.extras_require]`
-
-6. Update the README.md:
+4. Update the README.md:
    - Add the module to the "Available Modules" section
+   - Document required dependencies
 
 ## Module Structure Best Practices
 
 Each module should:
 
-1. **Have its own directory**: `ModuleName/`
-2. **Main Python file**: `ModuleName/ModuleName.py`
-3. **Requirements file**: `ModuleName/requirements.txt` (even if empty)
-4. **Use snake_case** for the wrapper file: `CustomModules/module_name.py`
-5. **Have proper docstrings**: Document what the module does
+1. **Be placed directly in**: `CustomModules/`
+2. **Use snake_case for filenames**: `CustomModules/new_module.py`
+3. **Implement logger support**: See "Logger Support Pattern" above
+4. **Have proper docstrings**: Document what the module does
+5. **Pass all code quality checks**: black, isort, flake8, pylint 10/10, Snyk
+6. **Include type hints**: Use `from typing import Optional, Dict, List, etc.`
 
 ## Testing Imports
 
@@ -158,9 +223,16 @@ Before publishing a new version:
 
 - [ ] All tests pass locally
 - [ ] Version numbers updated in all three files
+- [ ] Code quality checks pass:
+  - [ ] `python -m black CustomModules/` (no changes needed)
+  - [ ] `python -m isort CustomModules/` (no changes needed)
+  - [ ] `python -m flake8 CustomModules/` (exit code 0)
+  - [ ] `python -m pylint CustomModules/ --score=yes` (10.00/10)
+  - [ ] Snyk security scan clean (zero issues)
 - [ ] CHANGELOG updated (if you maintain one)
 - [ ] README.md is up to date
 - [ ] All module requirements.txt files are current
+- [ ] All modules implement logger support correctly
 - [ ] Run `python validate_structure.py` successfully
 - [ ] Build package locally: `python -m build`
 - [ ] Check distribution: `twine check dist/*`

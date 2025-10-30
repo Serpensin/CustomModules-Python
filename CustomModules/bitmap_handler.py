@@ -18,12 +18,12 @@ class BitmapHandler:
         """
         # Setup logger with child hierarchy: parent -> CustomModules -> BitmapHandler
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('BitmapHandler')
+            self.logger = logger.getChild("CustomModules").getChild("BitmapHandler")
         else:
-            self.logger = logging.getLogger('CustomModules.BitmapHandler')
-        
+            self.logger = logging.getLogger("CustomModules.BitmapHandler")
+
         self.logger.debug(f"Initializing BitmapHandler with {len(keys)} keys")
-        
+
         if len(keys) > 64:
             self.logger.error(f"Too many keys provided: {len(keys)} > 64")
             raise ValueError(
@@ -33,8 +33,10 @@ class BitmapHandler:
         # Generate the bitmap dictionary dynamically
         self.bitmap: Dict[str, int] = {key: index for index, key in enumerate(keys)}
         self.key_list: List[str] = keys.copy()  # Store keys in a list for ordering
-        
-        self.logger.info(f"BitmapHandler initialized successfully with keys: {', '.join(keys)}")
+
+        self.logger.info(
+            f"BitmapHandler initialized successfully with keys: {', '.join(keys)}"
+        )
 
     def get_bitkey(self, *args: str) -> int:
         """
@@ -54,11 +56,13 @@ class BitmapHandler:
         for key in args:
             if key in self.bitmap:
                 bitkey |= 1 << self.bitmap[key]
-                self.logger.debug(f"Added key '{key}' at position {self.bitmap[key]} to bitkey")
+                self.logger.debug(
+                    f"Added key '{key}' at position {self.bitmap[key]} to bitkey"
+                )
             elif key:
                 self.logger.error(f"Invalid key provided: {key}")
                 raise KeyError(f"Invalid key: {key}")
-        
+
         self.logger.debug(f"Generated bitkey: {bitkey} (binary: {bin(bitkey)})")
         return bitkey
 
@@ -94,11 +98,15 @@ class BitmapHandler:
         Raises:
             ValueError: If the bitkey is invalid (not within the valid range).
         """
-        self.logger.debug(f"Retrieving active keys from bitkey {bitkey} (single={single})")
-        
+        self.logger.debug(
+            f"Retrieving active keys from bitkey {bitkey} (single={single})"
+        )
+
         max_bitkey = (1 << len(self.bitmap)) - 1
         if bitkey < 0 or bitkey > max_bitkey:
-            self.logger.error(f"Invalid bitkey: {bitkey}. Must be between 0 and {max_bitkey}")
+            self.logger.error(
+                f"Invalid bitkey: {bitkey}. Must be between 0 and {max_bitkey}"
+            )
             raise ValueError(
                 f"Invalid bitkey: {bitkey}. It must be between 0 and {max_bitkey}."
             )
@@ -108,7 +116,7 @@ class BitmapHandler:
             for key, bit_position in self.bitmap.items()
             if bitkey & (1 << bit_position)
         ]
-        
+
         self.logger.debug(f"Found {len(active_keys)} active keys: {active_keys}")
 
         if single:
@@ -134,7 +142,7 @@ class BitmapHandler:
             KeyError: If the key is invalid (not in the bitmap).
         """
         self.logger.debug(f"Toggling key '{key}' in bitkey {bitkey} (add={add})")
-        
+
         if key not in self.bitmap:
             self.logger.error(f"Invalid key: {key}")
             raise KeyError(f"Invalid key: {key}")
@@ -144,8 +152,10 @@ class BitmapHandler:
             if add
             else bitkey & ~(1 << self.bitmap[key])
         )
-        
-        self.logger.debug(f"Key '{key}' {'added to' if add else 'removed from'} bitkey. Result: {result}")
+
+        self.logger.debug(
+            f"Key '{key}' {'added to' if add else 'removed from'} bitkey. Result: {result}"
+        )
         return result
 
     def invert_bitkey(self, bitkey: int) -> int:
@@ -190,7 +200,7 @@ class BitmapHandler:
             keys only in the first bitkey, and keys only in the second bitkey.
         """
         self.logger.debug(f"Comparing bitkeys: {bitkey1} and {bitkey2}")
-        
+
         common = bitkey1 & bitkey2
         only_in_1 = bitkey1 & ~bitkey2
         only_in_2 = bitkey2 & ~bitkey1
@@ -200,11 +210,13 @@ class BitmapHandler:
             "only_in_bitkey1": self.get_active_keys(only_in_1, single=False),  # type: ignore
             "only_in_bitkey2": self.get_active_keys(only_in_2, single=False),  # type: ignore
         }
-        
-        self.logger.debug(f"Comparison result: {len(result['common_keys'])} common, "
-                         f"{len(result['only_in_bitkey1'])} only in first, "
-                         f"{len(result['only_in_bitkey2'])} only in second")
-        
+
+        self.logger.debug(
+            f"Comparison result: {len(result['common_keys'])} common, "
+            f"{len(result['only_in_bitkey1'])} only in first, "
+            f"{len(result['only_in_bitkey2'])} only in second"
+        )
+
         return result
 
     def add_key(self, key: str):
@@ -218,7 +230,7 @@ class BitmapHandler:
             KeyError: If the key already exists in the bitmap.
         """
         self.logger.debug(f"Attempting to add key: {key}")
-        
+
         if key in self.bitmap:
             self.logger.error(f"Key '{key}' already exists in bitmap")
             raise KeyError(f"Key '{key}' already exists.")
@@ -227,8 +239,10 @@ class BitmapHandler:
         new_index = len(self.bitmap)
         self.bitmap[key] = new_index  # Assign the next available index
         self.key_list.append(key)  # Append the new key to the list
-        
-        self.logger.info(f"Added key '{key}' at position {new_index}. Total keys: {len(self.bitmap)}")
+
+        self.logger.info(
+            f"Added key '{key}' at position {new_index}. Total keys: {len(self.bitmap)}"
+        )
 
     def remove_key(self, key: str):
         """
@@ -241,7 +255,7 @@ class BitmapHandler:
             KeyError: If the key does not exist in the bitmap.
         """
         self.logger.debug(f"Attempting to remove key: {key}")
-        
+
         if key not in self.bitmap:
             self.logger.error(f"Key '{key}' does not exist in bitmap")
             raise KeyError(f"Key '{key}' does not exist.")
@@ -257,8 +271,10 @@ class BitmapHandler:
                     self.bitmap[k] -= 1
 
         self.key_list.remove(key)  # Remove from key list
-        
-        self.logger.info(f"Removed key '{key}' from position {index_to_remove}. Remaining keys: {len(self.bitmap)}")
+
+        self.logger.info(
+            f"Removed key '{key}' from position {index_to_remove}. Remaining keys: {len(self.bitmap)}"
+        )
 
     def get_keys(self) -> Dict[str, int]:
         """

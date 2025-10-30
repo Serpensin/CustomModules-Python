@@ -5,6 +5,7 @@ This module provides dynamic private voice channel creation and management,
 allowing users to create, customize, and control their own voice channels with
 various settings including user limits, permissions, channel naming, and more.
 """
+
 # pylint: disable=too-many-lines
 
 import asyncio
@@ -55,13 +56,13 @@ def setup(
         _conn = sqlite3.connect("PrivateVoice.db")
         internal_db_connection = True
     _c = _conn.cursor()
-    
+
     # Setup logger with child hierarchy
     if logger:
-        _logger = logger.getChild('CustomModules').getChild('PrivateVoice')
+        _logger = logger.getChild("CustomModules").getChild("PrivateVoice")
     else:
-        _logger = logging.getLogger('CustomModules.PrivateVoice')
-    
+        _logger = logging.getLogger("CustomModules.PrivateVoice")
+
     _logger.info("PrivateVoice module initialized")
     _logger = logger.getChild("PrivateVoice")
 
@@ -901,7 +902,7 @@ async def __pvoice_admin_add(
         )
     _conn.commit()
 
-    infinity_symbol = '\u221E'
+    infinity_symbol = "\u221e"
     max_users_display = infinity_symbol if max_users == 0 else max_users
     msg = (
         f"Private voice channel generator has been "

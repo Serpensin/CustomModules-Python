@@ -12,9 +12,9 @@ class BaseDatabaseBackend(ABC):
 
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('DatabaseHandler')
+            self.logger = logger.getChild("CustomModules").getChild("DatabaseHandler")
         else:
-            self.logger = logging.getLogger('CustomModules.DatabaseHandler')
+            self.logger = logging.getLogger("CustomModules.DatabaseHandler")
 
     @abstractmethod
     async def connect(self, connection_params: Dict[str, Any]) -> None:

@@ -1,11 +1,10 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from discord import AuditLogAction
 from discord.errors import Forbidden
-
 
 
 class Tracker:
@@ -24,16 +23,16 @@ class Tracker:
         """
         # Setup logger with child hierarchy: parent -> CustomModules -> InviteTracker
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('InviteTracker')
+            self.logger = logger.getChild("CustomModules").getChild("InviteTracker")
         else:
-            self.logger = logging.getLogger('CustomModules.InviteTracker')
-        
+            self.logger = logging.getLogger("CustomModules.InviteTracker")
+
         self.logger.debug("Initializing InviteTracker")
-        
+
         self.bot = bot
         self._cache = {}
         self._lock = asyncio.Lock()
-        
+
         self.logger.info("InviteTracker initialized")
 
     async def cache_invites(self) -> None:
@@ -55,7 +54,9 @@ class Tracker:
             self._cache[guild.id] = {invite.code: invite for invite in invites}
             self.logger.debug(f"Cached {len(invites)} invites for guild {guild.id}")
         except Forbidden:
-            self.logger.warning(f"Missing permissions to fetch invites for guild {guild.id}")
+            self.logger.warning(
+                f"Missing permissions to fetch invites for guild {guild.id}"
+            )
 
     async def update_invite_cache(self, invite) -> None:
         """
@@ -66,7 +67,9 @@ class Tracker:
         """
         async with self._lock:
             self._cache.setdefault(invite.guild.id, {})[invite.code] = invite
-            self.logger.debug(f"Updated invite cache for code {invite.code} in guild {invite.guild.id}")
+            self.logger.debug(
+                f"Updated invite cache for code {invite.code} in guild {invite.guild.id}"
+            )
 
     async def remove_invite_cache(self, invite) -> None:
         """
@@ -75,7 +78,9 @@ class Tracker:
         Parameters:
             invite (discord.Invite): The invite to remove from the cache.
         """
-        self.logger.debug(f"Removing invite {invite.code} from cache for guild {invite.guild.id}")
+        self.logger.debug(
+            f"Removing invite {invite.code} from cache for guild {invite.guild.id}"
+        )
         async with self._lock:
             guild_id = invite.guild.id
             if guild_id not in self._cache:
@@ -88,7 +93,7 @@ class Tracker:
             if (
                 (
                     ref_invite.created_at.timestamp() + ref_invite.max_age
-                    > datetime.utcnow().timestamp()
+                    > datetime.now(timezone.utc).timestamp()
                     or ref_invite.max_age == 0
                 )
                 and ref_invite.max_uses > 0
@@ -104,11 +109,15 @@ class Tracker:
                             return
                         break
                     self._cache[guild_id][ref_invite.code].revoked = True
-                    self.logger.debug(f"Marked invite {invite.code} as revoked after audit log check")
+                    self.logger.debug(
+                        f"Marked invite {invite.code} as revoked after audit log check"
+                    )
                     return
                 except Forbidden:
                     self._cache[guild_id][ref_invite.code].revoked = True
-                    self.logger.warning(f"Missing audit log permissions for guild {guild_id}, marked invite as revoked")
+                    self.logger.warning(
+                        f"Missing audit log permissions for guild {guild_id}, marked invite as revoked"
+                    )
                     return
             else:
                 self._cache[guild_id].pop(invite.code, None)
@@ -125,7 +134,9 @@ class Tracker:
         async with self._lock:
             invites = await guild.invites()
             self._cache[guild.id] = {invite.code: invite for invite in invites}
-            self.logger.info(f"Added {len(invites)} invites for guild {guild.id} to cache")
+            self.logger.info(
+                f"Added {len(invites)} invites for guild {guild.id} to cache"
+            )
 
     async def remove_guild_cache(self, guild) -> None:
         """
@@ -151,7 +162,9 @@ class Tracker:
         Returns:
             discord.Member | None: The inviter of the member.
         """
-        self.logger.debug(f"Fetching inviter for member {member.id} in guild {member.guild.id}")
+        self.logger.debug(
+            f"Fetching inviter for member {member.id} in guild {member.guild.id}"
+        )
         await asyncio.sleep(self.bot.latency)
         async with self._lock:
             guild_id = member.guild.id
@@ -175,11 +188,15 @@ class Tracker:
                     inviter_id = cached_invite.inviter.id
                     if inviter_id is not None:
                         inviter = member.guild.get_member(inviter_id)
-                        self.logger.info(f"Found inviter {inviter_id} for member {member.id}")
+                        self.logger.info(
+                            f"Found inviter {inviter_id} for member {member.id}"
+                        )
                         return inviter
                     else:
-                        self.logger.debug(f"No inviter found for member {member.id} (likely vanity link)")
+                        self.logger.debug(
+                            f"No inviter found for member {member.id} (likely vanity link)"
+                        )
                         return None  # Handle the case when inviter_id is None (vanity link)
-            
+
             self.logger.warning(f"Could not determine inviter for member {member.id}")
             return None

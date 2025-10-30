@@ -9,16 +9,16 @@ _logger: Optional[logging.Logger] = None
 def set_logger(logger: Optional[logging.Logger] = None) -> None:
     """
     Set the logger for this module.
-    
+
     Args:
         logger (Optional[logging.Logger]): Parent logger. If provided, creates a child logger
         under CustomModules.RandomUsernames. Defaults to None.
     """
     global _logger
     if logger:
-        _logger = logger.getChild('CustomModules').getChild('RandomUsernames')
+        _logger = logger.getChild("CustomModules").getChild("RandomUsernames")
     else:
-        _logger = logging.getLogger('CustomModules.RandomUsernames')
+        _logger = logging.getLogger("CustomModules.RandomUsernames")
     _logger.debug("RandomUsernames logger configured")
 
 
@@ -819,8 +819,10 @@ def generate_username(num_results: int = 1, include_numbers: bool = True) -> lis
         list: A list of usernames.
     """
     if _logger:
-        _logger.debug(f"Generating {num_results} username(s) (include_numbers={include_numbers})")
-    
+        _logger.debug(
+            f"Generating {num_results} username(s) (include_numbers={include_numbers})"
+        )
+
     usernames = []
     choice = random.choice
     randint = random.randint
@@ -837,7 +839,7 @@ def generate_username(num_results: int = 1, include_numbers: bool = True) -> lis
 
     if _logger:
         _logger.debug(f"Generated usernames: {usernames}")
-    
+
     return usernames
 
 

@@ -1,0 +1,51 @@
+[MASTER]
+ignore=CVS,.git,__pycache__,.venv,venv,.tox,build,dist,*.egg-info
+jobs=0
+
+[MESSAGES CONTROL]
+disable=
+    # Duplicate code is expected in similar modules (R0801)
+    duplicate-code,
+    # Import errors for optional dependencies (discord.py, asyncpg, etc.)
+    import-error,
+    # Allow broad exception catching in API wrappers
+    broad-exception-caught,
+    # Allow missing timeout for some HTTP requests
+    missing-timeout,
+    # Allow raising without from in some legacy code
+    raise-missing-from,
+    # Allow dict literal style preference
+    use-dict-literal,
+    # Allow logging with f-strings (W1203)
+    logging-fstring-interpolation,
+    # Missing docstrings - will be added incrementally
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    # Naming conventions - some are intentional (e.g., API parameters)
+    invalid-name,
+    # Global statements needed for setup functions
+    global-statement,
+    global-variable-undefined,
+    # Complexity metrics - will be refactored separately
+    too-many-branches,
+    too-many-statements,
+    too-many-return-statements,
+    too-many-locals,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-many-instance-attributes,
+    # Other pragmatic exceptions
+    unused-argument,
+    no-else-return,
+    redefined-outer-name,
+    wrong-import-position,
+    import-outside-toplevel,
+    line-too-long,
+    unnecessary-pass,
+    too-many-lines,
+    too-few-public-methods
+
+[FORMAT]
+max-line-length=120
+indent-string='    '

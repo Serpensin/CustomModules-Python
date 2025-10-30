@@ -9,6 +9,12 @@
 
 A collection of custom Python modules for Discord bots and various utilities.
 
+## ✨ What's New in v2.0.2
+
+- **Universal Logger Support**: All modules now support optional logger parameter with hierarchical child logger pattern
+- **Improved Security**: Fixed dependency issues and passed all Snyk security scans
+- **Code Quality**: Achieved 10/10 pylint score with black formatting and flake8 compliance
+
 ## Installation
 
 Install the base package:
@@ -56,7 +62,32 @@ Import modules using dot notation:
 from CustomModules.bitmap_handler import BitmapHandler
 from CustomModules.database_handler import DatabaseHandler
 from CustomModules.log_handler import LogManager
-from CustomModules.stat_dock import StatDock
+from CustomModules.stat_dock import setup as stat_dock_setup
+```
+
+### Logger Support (v2.0.2+)
+
+All modules now support optional logger parameter for better debugging and monitoring:
+
+```python
+import logging
+from CustomModules.bitmap_handler import BitmapHandler
+from CustomModules.steam import API as SteamAPI
+
+# Create a parent logger
+logger = logging.getLogger('MyApp')
+
+# All modules create child loggers under CustomModules.ModuleName
+bitmap = BitmapHandler(['read', 'write'], logger=logger)
+# Creates logger: MyApp.CustomModules.BitmapHandler
+
+steam_api = SteamAPI(api_key='your_key', logger=logger)
+# Creates logger: MyApp.CustomModules.Steam
+
+# Function-based modules use set_logger()
+from CustomModules import killswitch
+killswitch.set_logger(logger)
+# Creates logger: MyApp.CustomModules.Killswitch
 ```
 
 ## Requirements

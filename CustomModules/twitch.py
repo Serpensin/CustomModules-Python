@@ -34,22 +34,24 @@ class TwitchAPI:
         Get image for category ID
     """
 
-    def __init__(self, client_id, client_secret, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self, client_id, client_secret, logger: Optional[logging.Logger] = None
+    ):
         # Setup logger with child hierarchy
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('Twitch')
+            self.logger = logger.getChild("CustomModules").getChild("Twitch")
         else:
-            self.logger = logging.getLogger('CustomModules.Twitch')
-        
+            self.logger = logging.getLogger("CustomModules.Twitch")
+
         self.logger.debug("Initializing Twitch API")
-        
+
         self.client_id = client_id
         self.client_secret = client_secret
         self.access_token = self.get_twitch_app_access_token()
         self.streams = "https://api.twitch.tv/helix/streams"
         self.users = "https://api.twitch.tv/helix/users"
         self.top = "https://api.twitch.tv/helix/games/top"
-        
+
         self.logger.info("Twitch API initialized successfully")
 
     def get_twitch_app_access_token(self) -> str | int:

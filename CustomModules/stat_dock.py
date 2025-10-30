@@ -11,6 +11,7 @@ from typing import Any, Literal, Optional
 
 import discord
 import pytz
+
 from CustomModules.bitmap_handler import BitmapHandler
 
 _overwrites = discord.PermissionOverwrite(
@@ -105,12 +106,12 @@ def setup(
     if _conn is None:
         _conn = sqlite3.connect("StatDocks.db")
     _c = _conn.cursor()
-    
+
     # Setup logger with child hierarchy
     if logger:
-        _logger = logger.getChild('CustomModules').getChild('StatDock')
+        _logger = logger.getChild("CustomModules").getChild("StatDock")
     else:
-        _logger = logging.getLogger('CustomModules.StatDock')
+        _logger = logging.getLogger("CustomModules.StatDock")
 
     _setup_database()
 
@@ -211,26 +212,22 @@ async def _init_dock(
         match stat_type:
             case "time":
                 prefix_with_space = prefix + " " if prefix else ""
-                current_time = _get_current_time(timezone=timezone, time_format=timeformat)
-                await channel.edit(
-                    name=f"{prefix_with_space}{current_time}"
+                current_time = _get_current_time(
+                    timezone=timezone, time_format=timeformat
                 )
+                await channel.edit(name=f"{prefix_with_space}{current_time}")
             case "role":
                 members_in_role = await _count_members_by_role(
                     role=role, countbots=countbots, countusers=countusers
                 )
                 prefix_with_space = prefix + " " if prefix else ""
-                await channel.edit(
-                    name=f"{prefix_with_space}{members_in_role}"
-                )
+                await channel.edit(name=f"{prefix_with_space}{members_in_role}")
             case "member":
                 members_in_guild = await _count_members_in_guild(
                     guild=guild, countbots=countbots, countusers=countusers
                 )
                 prefix_with_space = prefix + " " if prefix else ""
-                await channel.edit(
-                    name=f"{prefix_with_space}{members_in_guild}"
-                )
+                await channel.edit(name=f"{prefix_with_space}{members_in_guild}")
             case "channel":
                 channels_in_guild = await _count_channels_in_guild(
                     guild=guild,
@@ -241,9 +238,7 @@ async def _init_dock(
                     countforum=countforum,
                 )
                 prefix_with_space = prefix + " " if prefix else ""
-                await channel.edit(
-                    name=f"{prefix_with_space}{channels_in_guild}"
-                )
+                await channel.edit(name=f"{prefix_with_space}{channels_in_guild}")
 
             case _:
                 raise ValueError(f"Invalid stat_type: {stat_type}.")
@@ -308,7 +303,9 @@ async def _re_init_dock(
         match stat_type:
             case "time":
                 prefix_with_space = prefix + " " if prefix else ""
-                current_time = _get_current_time(timezone=timezone, time_format=timeformat)
+                current_time = _get_current_time(
+                    timezone=timezone, time_format=timeformat
+                )
                 created_channel = await guild.create_voice_channel(
                     name=f"{prefix_with_space}{current_time}",
                     category=category,

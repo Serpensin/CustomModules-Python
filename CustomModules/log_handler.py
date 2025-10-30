@@ -18,7 +18,13 @@ class LogManager:
         logger (logging.Logger): Optional logger for meta-logging LogManager operations.
     """
 
-    def __init__(self, log_folder, app_folder_name, log_level="INFO", logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        log_folder,
+        app_folder_name,
+        log_level="INFO",
+        logger: Optional[logging.Logger] = None,
+    ):
         """
         Initializes the LogManager with the specified log folder, application folder name, and log level.
 
@@ -30,20 +36,22 @@ class LogManager:
             If provided, creates a child logger under CustomModules.LogHandler. Defaults to None.
         """
         init()  # Initialize colorama for colored console output.
-        
+
         # Setup meta-logger with child hierarchy: parent -> CustomModules -> LogHandler
         if logger:
-            self.logger = logger.getChild('CustomModules').getChild('LogHandler')
+            self.logger = logger.getChild("CustomModules").getChild("LogHandler")
         else:
-            self.logger = logging.getLogger('CustomModules.LogHandler')
-        
-        self.logger.debug(f"Initializing LogManager for app '{app_folder_name}' in folder '{log_folder}'")
-        
+            self.logger = logging.getLogger("CustomModules.LogHandler")
+
+        self.logger.debug(
+            f"Initializing LogManager for app '{app_folder_name}' in folder '{log_folder}'"
+        )
+
         self.log_folder = log_folder
         self.app_folder_name = app_folder_name
         self.log_level = self._get_log_level(log_level)
         self._lock = threading.Lock()  # Thread-safety lock for handler operations
-        
+
         self.logger.info(f"LogManager initialized with log level {log_level}")
 
     def _get_log_level(self, log_level_str) -> int:
@@ -76,14 +84,16 @@ class LogManager:
             logging.Logger: The configured logger.
         """
         self.logger.debug(f"Creating logger: {logger_name}")
-        
+
         # Create the logger
         logger = logging.getLogger(logger_name)
         logger.setLevel(self.log_level)
 
         # Prevent duplicate handlers if logger already exists
         if logger.handlers:
-            self.logger.debug(f"Logger {logger_name} already has handlers, returning existing logger")
+            self.logger.debug(
+                f"Logger {logger_name} already has handlers, returning existing logger"
+            )
             return logger
 
         # Create a file handler that rotates logs at midnight

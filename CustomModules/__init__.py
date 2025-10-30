@@ -20,9 +20,9 @@ Available modules:
 - twitch: Twitch API integration
 """
 
-__version__ = '2.0.1'
-__author__ = 'Serpensin'
-__license__ = 'AGPL-3.0'
+__version__ = "2.0.1"
+__author__ = "Serpensin"
+__license__ = "AGPL-3.0"
 
 # Conditional imports based on available dependencies
 try:
@@ -106,20 +106,20 @@ except ImportError:
     pass
 
 __all__ = [
-    'app_translation',
-    'bitmap_handler',
-    'bot_directory',
-    'database_handler',
-    'googletrans',
-    'invite_tracker',
-    'killswitch',
-    'libretrans',
-    'log_handler',
-    'patchnotes',
-    'private_voice',
-    'random_usernames',
-    'stat_dock',
-    'steam',
-    'steam_charts',
-    'twitch',
+    "app_translation",
+    "bitmap_handler",
+    "bot_directory",
+    "database_handler",
+    "googletrans",
+    "invite_tracker",
+    "killswitch",
+    "libretrans",
+    "log_handler",
+    "patchnotes",
+    "private_voice",
+    "random_usernames",
+    "stat_dock",
+    "steam",
+    "steam_charts",
+    "twitch",
 ]
