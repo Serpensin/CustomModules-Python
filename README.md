@@ -19,12 +19,12 @@ pip install CustomModules
 Install with specific module dependencies:
 ```bash
 # Install with a specific module's dependencies
-pip install CustomModules[StatDock]
-pip install CustomModules[DatabaseHandler]
-pip install CustomModules[LogHandler]
+pip install CustomModules[statdock]
+pip install CustomModules[databasehandler]
+pip install CustomModules[loghandler]
 
 # Install multiple modules
-pip install CustomModules[StatDock,DatabaseHandler,LogHandler]
+pip install CustomModules[statdock,databasehandler,loghandler]
 
 # Install all modules with all dependencies
 pip install CustomModules[all]

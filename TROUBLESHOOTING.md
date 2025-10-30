@@ -2,38 +2,7 @@
 
 ## Common Issues and Solutions
 
-### Build Issues
-
-#### Error: "Module directory not found"
-**Problem:** Build fails because a module directory is missing.
-
-**Solution:**
-```bash
-# Run validation script to check structure
-python validate_structure.py
-
-# Look for missing directories in the output
-# Create any missing directories and required files
-```
-
-#### Error: "requirements.txt cannot be found"
-**Problem:** A module is missing its requirements.txt file.
-
-**Solution:**
-```bash
-# Create an empty requirements.txt for modules without dependencies
-echo "# No external dependencies required" > ModuleName/requirements.txt
-```
-
-#### Error: "invalid pyproject.toml config"
-**Problem:** pyproject.toml has configuration errors.
-
-**Solution:**
-- Check that email is valid or removed from authors
-- Ensure version format is correct: `version = "1.0.0"`
-- Validate SPDX license identifier
-
-### Import Issues
+### Installation Issues
 
 #### Error: "ModuleNotFoundError: No module named 'CustomModules'"
 **Problem:** Package not installed or installed incorrectly.
@@ -47,6 +16,32 @@ pip install -e .
 # For production
 pip install CustomModules
 ```
+
+#### Error: "No module named 'discord'" or similar dependency errors
+**Problem:** Required dependencies for a specific module are not installed.
+
+**Solution:**
+Install the package with the appropriate extra for the module you want to use:
+```bash
+# For a single module (use lowercase)
+pip install CustomModules[loghandler]
+
+# For multiple modules
+pip install CustomModules[loghandler,databasehandler]
+
+# For all modules
+pip install CustomModules[all]
+```
+
+### Build Issues
+
+#### Error: "invalid pyproject.toml config"
+**Problem:** pyproject.toml has configuration errors.
+
+**Solution:**
+- Ensure version format is correct: `version = "2.0.0"`
+- Validate SPDX license identifier
+- Check that all required fields are present
 
 #### Error: "ModuleNotFoundError: No module named 'discord'"
 **Problem:** Module dependencies not installed.

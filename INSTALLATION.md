@@ -16,10 +16,10 @@ Install with dependencies for specific modules you plan to use:
 
 ```bash
 # Single module
-pip install CustomModules[StatDock]
+pip install CustomModules[statdock]
 
 # Multiple modules
-pip install CustomModules[StatDock,DatabaseHandler,LogHandler]
+pip install CustomModules[statdock,databasehandler,loghandler]
 
 # All modules
 pip install CustomModules[all]
@@ -27,24 +27,24 @@ pip install CustomModules[all]
 
 ### Available Module Extras
 
-You can install any of these extras:
+You can install any of these extras (use lowercase):
 
-- `AppTranslation` - Application translation utilities
-- `BitmapHandler` - Bitmap manipulation (no additional dependencies)
-- `BotDirectory` - Bot directory management
-- `DatabaseHandler` - Multi-database async handler
-- `Googletrans` - Google Translate integration
-- `InviteTracker` - Discord invite tracking
-- `Killswitch` - Dead by Daylight killswitch monitoring
-- `Libretrans` - LibreTranslate integration
-- `LogHandler` - Advanced logging with colored console output
-- `Patchnotes` - Patch notes management
-- `PrivateVoice` - Private voice channel management
-- `RandomUsernames` - Random username generation
-- `StatDock` - Statistics tracking for Discord
-- `Steam` - Steam API integration
-- `SteamCharts` - Steam Charts data retrieval
-- `Twitch` - Twitch API integration
+- `apptranslation` - Application translation utilities
+- `bitmaphandler` - Bitmap manipulation (no additional dependencies)
+- `botdirectory` - Bot directory management
+- `databasehandler` - Multi-database async handler
+- `googletrans` - Google Translate integration
+- `invitetracker` - Discord invite tracking
+- `killswitch` - Dead by Daylight killswitch monitoring
+- `libretrans` - LibreTranslate integration
+- `loghandler` - Advanced logging with colored console output
+- `patchnotes` - Patch notes management
+- `privatevoice` - Private voice channel management
+- `randomusernames` - Random username generation
+- `statdock` - Statistics tracking for Discord
+- `steam` - Steam API integration
+- `steamcharts` - Steam Charts data retrieval
+- `twitch` - Twitch API integration
 - `all` - Install all dependencies for all modules
 
 ## Usage Examples

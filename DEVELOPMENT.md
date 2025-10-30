@@ -15,9 +15,9 @@
    pip install -e .
    ```
 
-   Or with specific extras:
+   Or with specific extras (use lowercase):
    ```bash
-   pip install -e .[DatabaseHandler,LogHandler]
+   pip install -e .[databasehandler,loghandler]
    ```
 
    Or with all dependencies:
