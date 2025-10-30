@@ -142,7 +142,7 @@ class API:
                     }
                 return await response.json()
 
-    async def link_to_id(self, link) -> str:
+    async def link_to_id(self, link) -> Optional[str]:
         """
         Convert a Steam profile link to a Steam ID.
 
@@ -150,7 +150,7 @@ class API:
             link (str): Steam profile link or vanity URL.
 
         Returns:
-            str: Steam ID.
+            Optional[str]: Steam ID, or None if conversion fails.
         Raises:
             Errors.RateLimit: If the API rate limit is exceeded.
             ValueError: If the provided Steam ID or link is invalid.
@@ -277,15 +277,20 @@ async def get_free_promotions() -> Union[list, dict]:
 
 
 if __name__ == "__main__":
+    api = None
     try:
         api = API("")
     except Errors.InvalidKey as e:
         print(e)
-    try:
-        print(
-            asyncio.run(api.get_player_summeries("Schlangensuende, 76561197969978546"))
-        )
-        print(asyncio.run(api.get_app_details(570)))
-    except Errors.Private as e:
-        print(e)
+
+    if api:
+        try:
+            print(
+                asyncio.run(
+                    api.get_player_summeries("Schlangensuende, 76561197969978546")
+                )
+            )
+            print(asyncio.run(api.get_app_details(570)))
+        except Errors.Private as e:
+            print(e)
     print(asyncio.run(get_free_promotions()))
