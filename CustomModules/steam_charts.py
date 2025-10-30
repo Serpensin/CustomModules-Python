@@ -1,6 +1,6 @@
 import http
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -25,7 +25,7 @@ def set_logger(logger: Optional[logging.Logger] = None) -> None:
     _logger.debug("SteamCharts logger configured")
 
 
-async def playercount(gameid) -> dict[str, str]:
+async def playercount(gameid) -> Union[dict[str, str], dict[str, dict[str, int | str]]]:
     """
     Gets the current player count of the given game.
 
@@ -77,12 +77,24 @@ async def playercount(gameid) -> dict[str, str]:
         _logger.debug(f"Found {len(stats)} stat elements")
 
     if len(stats) >= 3:
-        data["Current Players"] = stats[0].find("span", class_="num").text
-        data["Peak Players 24h"] = stats[1].find("span", class_="num").text
-        data["Peak Players All Time"] = stats[2].find("span", class_="num").text
+        num_current = stats[0].find("span", class_="num")
+        num_24h = stats[1].find("span", class_="num")
+        num_all_time = stats[2].find("span", class_="num")
 
-        if _logger:
-            _logger.info(f"Successfully retrieved player count for game ID {gameid}")
+        if num_current and num_24h and num_all_time:
+            data["Current Players"] = num_current.text
+            data["Peak Players 24h"] = num_24h.text
+            data["Peak Players All Time"] = num_all_time.text
+
+            if _logger:
+                _logger.info(
+                    f"Successfully retrieved player count for game ID {gameid}"
+                )
+        else:
+            if _logger:
+                _logger.warning(
+                    f"Could not find player count data for game ID {gameid}"
+                )
     else:
         if _logger:
             _logger.warning(f"Insufficient stat elements found for game ID {gameid}")
@@ -96,7 +108,11 @@ if __name__ == "__main__":
     input_id = input("Enter the Steam ID of the game: ")
     data = asyncio.run(playercount(input_id))
     if "error" in data:
-        print(f'Error: {data["error"]["message"]}')
+        error_info = data.get("error")
+        if isinstance(error_info, dict):
+            print(f'Error: {error_info.get("message", "Unknown error")}')
+        else:
+            print(f"Error: {error_info}")
     else:
         print(f'Current Players: {data["Current Players"]}')
         print(f'Peak Players 24h: {data["Peak Players 24h"]}')

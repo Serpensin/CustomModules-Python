@@ -252,7 +252,8 @@ class TwitchAPI:
 
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(self.users) as response:
-                return int(response.headers.get("Ratelimit-Remaining"))
+                remaining = response.headers.get("Ratelimit-Remaining", "0")
+                return int(remaining)
 
     async def get_category_image(self, category_id) -> str:
         """
