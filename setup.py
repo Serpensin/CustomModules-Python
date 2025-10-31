@@ -89,7 +89,7 @@ extras_require["all"] = sorted(all_deps)
 
 setup(
     name="CustomModules",
-    version="2.0.2",
+    version="2.0.4",
     author="Serpensin",
     description="A collection of custom Python modules for Discord bots and utilities",
     long_description=read_file("README.md"),
@@ -106,10 +106,11 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Communications :: Chat",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.10,<3.14",
     install_requires=[],  # No core dependencies
     extras_require=extras_require,
     license="AGPL-3.0",
