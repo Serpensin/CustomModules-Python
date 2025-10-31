@@ -21,6 +21,14 @@ if sys.version_info < (3, 10):
     raise ImportError("This module requires Python 3.10 or higher to work correctly.")
 
 
+# Global variables with proper type hints
+_c: sqlite3.Cursor
+_conn: sqlite3.Connection
+_bot: discord.Client
+_logger: logging.Logger
+internal_db_connection: bool
+
+
 # Setup
 def setup(
     client: discord.Client,
@@ -44,7 +52,7 @@ def setup(
         ValueError: If the command tree or Discord client is None.
     """
     global _c, _conn, _bot, _logger, internal_db_connection  # pylint: disable=global-variable-undefined
-    _conn, _bot = connection, client
+    _bot = client
     internal_db_connection = False
 
     if tree is None:
@@ -52,9 +60,11 @@ def setup(
     if _bot is None:
         raise ValueError("Discord client cannot be None.")
 
-    if _conn is None:
+    if connection is None:
         _conn = sqlite3.connect("PrivateVoice.db")
         internal_db_connection = True
+    else:
+        _conn = connection
     _c = _conn.cursor()
 
     # Setup logger with child hierarchy
@@ -64,7 +74,6 @@ def setup(
         _logger = logging.getLogger("CustomModules.PrivateVoice")
 
     _logger.info("PrivateVoice module initialized")
-    _logger = logger.getChild("PrivateVoice")
 
     __setup_database()
 
@@ -82,7 +91,7 @@ def setup(
     _logger.info("Module has been initialized.")
 
 
-async def add_listener() -> None:
+def add_listener() -> None:
     """
     Add event listeners for voice state updates and channel deletions.
 
@@ -103,19 +112,19 @@ async def add_listener() -> None:
             await original_on_voice_state_update(member, before, after)
         await _on_voice_state_update(member, before, after)
 
-    _bot.on_voice_state_update = new_on_voice_state_update
+    _bot.on_voice_state_update = new_on_voice_state_update  # type: ignore[misc]
 
     async def new_on_guild_channel_delete(channel):
         if original_on_guild_channel_delete:
             await original_on_guild_channel_delete(channel)
-        await _on_channel_delete(channel)
+        _on_channel_delete(channel)
 
-    _bot.on_guild_channel_delete = new_on_guild_channel_delete
+    _bot.on_guild_channel_delete = new_on_guild_channel_delete  # type: ignore[misc]
 
     _logger.info("Listener has been added.")
 
 
-async def start_garbage_collector() -> None:
+def start_garbage_collector() -> None:
     """
     Start the garbage collector task.
 
@@ -147,7 +156,7 @@ async def __garbage_collector() -> None:
         None
     """
 
-    async def _function():
+    def _function():
         _c.execute("SELECT channel_id FROM PRIVATEVOICE_OPENCHANNELS")
         open_channels = {channel_id for (channel_id,) in _c.fetchall()}
         stale_channels = [
@@ -167,7 +176,7 @@ async def __garbage_collector() -> None:
 
     while True:
         try:
-            await _function()
+            _function()
             await asyncio.sleep(60 * 2)
         except asyncio.CancelledError:
             # Cleanup before propagating cancellation
@@ -623,11 +632,11 @@ async def __handle_private_vc(member, after_channel_id, before_channel_id=None) 
         match pvoice_before, pvoice_after:
             case None, None:
                 return
-            case None, _:
+            case None, pv_after if pv_after is not None:
                 _logger.debug(
                     f"Member {member} joined private voice channel {after_channel_id}"
                 )
-                if member.id != pvoice_after[3]:
+                if member.id != pv_after[3]:
                     _logger.debug(
                         f"Member {member} is not the channel owner, setting permissions"
                     )
@@ -671,7 +680,11 @@ async def __is_channel_owner_in_current_vc(interaction: discord.Interaction) -> 
     Returns:
         bool: True if the user is the owner of the private voice channel, False otherwise.
     """
+    # interaction.user in guild context is actually a Member
     user = interaction.user
+    if not isinstance(user, discord.Member):
+        return False
+    
     voice_channel_id = (
         user.voice.channel.id if user.voice and user.voice.channel else None
     )
@@ -732,7 +745,7 @@ async def _on_voice_state_update(member, before, after) -> None:
             return
 
 
-async def _on_channel_delete(channel) -> None:
+def _on_channel_delete(channel) -> None:
     """
     Handle the deletion of a channel.
 
@@ -787,7 +800,7 @@ async def __pvoice_admin_add(
     permit_update: bool,
     bitrate: int = 64,
     public: bool = False,
-    public_role: discord.Role = None,
+    public_role: Optional[discord.Role] = None,
     prefix: str = "",
 ) -> None:
     """
@@ -950,6 +963,12 @@ async def __pvoice_admin_remove(
     Returns:
         None
     """
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "This command can only be used in a server.", ephemeral=True
+        )
+        return
+    
     _c.execute(
         "SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ? AND join_to_create_id = ?",
         (interaction.guild.id, channel.id),
@@ -998,6 +1017,12 @@ async def __pvoice_admin_list(interaction: discord.Interaction) -> None:
     Returns:
         None
     """
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "This command can only be used in a server.", ephemeral=True
+        )
+        return
+    
     _c.execute(
         "SELECT * FROM PRIVATEVOICE_SETTINGS WHERE guild_id = ?",
         (interaction.guild.id,),
@@ -1012,6 +1037,8 @@ async def __pvoice_admin_list(interaction: discord.Interaction) -> None:
     for setting in settings:
         channel = interaction.guild.get_channel(setting[2])
         category = interaction.guild.get_channel(setting[3])
+        if channel is None or category is None:
+            continue
         max_users_display = "\u221e" if setting[4] == 0 else setting[4]
         public_role_display = "" if not setting[6] else f"<@&{setting[6]}>"
         embed.add_field(
@@ -1056,7 +1083,19 @@ async def __pvoice_commander_add(
     if not await __is_channel_owner_in_current_vc(interaction):
         return
 
+    # At this point we know the user is a Member with voice state
+    assert interaction.guild is not None
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.guild.get_channel(interaction.user.voice.channel.id)
+    if not isinstance(channel, discord.VoiceChannel):
+        await interaction.response.send_message(
+            "Invalid channel type.", ephemeral=True
+        )
+        return
+    
     if len(channel.members) >= channel.user_limit:
         await interaction.response.send_message(
             "The private voice channel is full.", ephemeral=True
@@ -1096,6 +1135,11 @@ async def __pvoice_commander_remove(
     if not await __is_channel_owner_in_current_vc(interaction):
         return
 
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.user.voice.channel
     if member not in channel.overwrites:
         await interaction.response.send_message(
@@ -1138,6 +1182,11 @@ async def __pvoice_commander_kick(
     if not await __is_channel_owner_in_current_vc(interaction):
         return
 
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.user.voice.channel
     if member not in channel.members:
         await interaction.response.send_message(
@@ -1186,6 +1235,11 @@ async def __pvoice_commander_limit(
     if not await __is_channel_owner_in_current_vc(interaction):
         return
 
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
@@ -1227,6 +1281,13 @@ async def __pvoice_commander_bitrate(
     """
     if not await __is_channel_owner_in_current_vc(interaction):
         return
+    
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    assert interaction.guild is not None
+    
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
@@ -1299,6 +1360,12 @@ async def __pvoice_commander_region(
     """
     if not await __is_channel_owner_in_current_vc(interaction):
         return
+    
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(
@@ -1338,6 +1405,12 @@ async def __pvoice_commander_rename(
     """
     if not await __is_channel_owner_in_current_vc(interaction):
         return
+    
+    # At this point we know the user is a Member with voice state
+    assert isinstance(interaction.user, discord.Member)
+    assert interaction.user.voice is not None
+    assert interaction.user.voice.channel is not None
+    
     channel = interaction.user.voice.channel
     if not __is_channel_allowed_to_update(channel.id):
         await interaction.response.send_message(

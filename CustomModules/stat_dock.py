@@ -14,6 +14,13 @@ import pytz
 
 from CustomModules.bitmap_handler import BitmapHandler
 
+# Global variables with proper type hints
+_c: sqlite3.Cursor
+_conn: sqlite3.Connection
+_bot: discord.Client
+_logger: logging.Logger
+_bitmap_handler: BitmapHandler
+
 # SQL query constants
 SQL_DELETE_STATDOCK_BY_CHANNEL = "DELETE FROM `STATDOCK` WHERE `channel_id` = ?"
 ERR_GUILD_ONLY = "This command can only be used in a guild."
@@ -99,15 +106,16 @@ def setup(
     connection: Optional[sqlite3.Connection] = None,
     logger: Optional[logging.Logger] = None,
 ) -> None:
-    global _c, _conn, _bot, _logger, _bitmap
-    _conn, _bot, _bitmap = connection, client, BitmapHandler(_bitmap)
+    global _c, _conn, _bot, _logger, _bitmap_handler
+    _bot = client
+    _bitmap_handler = BitmapHandler(_bitmap)
 
     if tree is None:
         raise ValueError("Command tree cannot be None.")
     if _bot is None:
         raise ValueError("Discord client cannot be None.")
 
-    if _conn is None:
+    if connection is None:
         _conn = sqlite3.connect("StatDocks.db")
     _c = _conn.cursor()
 
@@ -171,6 +179,8 @@ async def task() -> None:
 
 
 def _setup_database() -> None:
+    if _conn is None:
+        raise ValueError("Database connection is not initialized.")
     _c.executescript(
         """
     CREATE TABLE IF NOT EXISTS "STATDOCK" (
@@ -256,13 +266,13 @@ async def _init_dock(
             guild.id,
             category.id,
             channel.id,
-            _bitmap.get_bitkey(stat_type),
+            _bitmap_handler.get_bitkey(stat_type),
             timezone,
             timeformat,
             prefix,
             frequency,
             int(time()),
-            _bitmap.get_bitkey(
+            _bitmap_handler.get_bitkey(
                 "countbots" if countbots else "",
                 "countusers" if countusers else "",
                 "counttext" if counttext else "",
@@ -281,7 +291,7 @@ async def _re_init_dock(
     guild_id: int,
     category_id: int,
     channel_id: int,
-    stat_type: int,
+    stat_type: str,
     timezone: str,
     timeformat: str,
     counter: int,
@@ -290,20 +300,27 @@ async def _re_init_dock(
     ignore_none_category: bool = False,
 ) -> None:
     # Re-initializes the dock, if the channel got deleted and the stat dock not disabled/deleted.
-    guild: discord.Guild = await _get_or_fetch("guild", guild_id)
-    category: discord.CategoryChannel = await _get_or_fetch("channel", category_id)
+    if _conn is None:
+        raise ValueError("Database connection is not initialized.")
+    guild: Optional[discord.Guild] = await _get_or_fetch("guild", guild_id)
+    category: Optional[discord.CategoryChannel] = await _get_or_fetch("channel", category_id)
+    
+    # For role type, get the role
+    role: Optional[discord.Role] = None
+    if stat_type == "role":
+        role = await _get_or_fetch("role", role_id)
+    
     if (
         guild is None
         or (category is None and not ignore_none_category)
-        or (
-            stat_type == "role"
-            and (role := await _get_or_fetch("role", role_id)) is None
-        )
+        or (stat_type == "role" and role is None)
     ):
         _c.execute(SQL_DELETE_STATDOCK_BY_CHANNEL, (channel_id,))
         _conn.commit()
         return
+    
     try:
+        created_channel = None
         match stat_type:
             case "time":
                 prefix_with_space = prefix + " " if prefix else ""
@@ -316,10 +333,13 @@ async def _re_init_dock(
                     overwrites={guild.default_role: _overwrites},
                 )
             case "role":
+                if role is None:
+                    _logger.error("Role is None despite passing validation")
+                    return
                 members_in_role = await _count_members_by_role(
                     role=role,
-                    countbots=_bitmap.check_key_in_bitkey("countbots", counter),
-                    countusers=_bitmap.check_key_in_bitkey("countusers", counter),
+                    countbots=_bitmap_handler.check_key_in_bitkey("countbots", counter),
+                    countusers=_bitmap_handler.check_key_in_bitkey("countusers", counter),
                 )
                 prefix_with_space = prefix + " " if prefix else ""
                 created_channel = await guild.create_voice_channel(
@@ -330,8 +350,8 @@ async def _re_init_dock(
             case "member":
                 members_in_guild = await _count_members_in_guild(
                     guild=guild,
-                    countbots=_bitmap.check_key_in_bitkey("countbots", counter),
-                    countusers=_bitmap.check_key_in_bitkey("countusers", counter),
+                    countbots=_bitmap_handler.check_key_in_bitkey("countbots", counter),
+                    countusers=_bitmap_handler.check_key_in_bitkey("countusers", counter),
                 )
                 prefix_with_space = prefix + " " if prefix else ""
                 created_channel = await guild.create_voice_channel(
@@ -340,24 +360,31 @@ async def _re_init_dock(
                     overwrites={guild.default_role: _overwrites},
                 )
             case "channel":
-                _ = await _count_channels_in_guild(
+                channels_in_guild = await _count_channels_in_guild(
                     guild=guild,
-                    counttext=_bitmap.check_key_in_bitkey("counttext", counter),
-                    countvoice=_bitmap.check_key_in_bitkey("countvoice", counter),
-                    countcategory=_bitmap.check_key_in_bitkey("countcategory", counter),
-                    countstage=_bitmap.check_key_in_bitkey("countstage", counter),
-                    countforum=_bitmap.check_key_in_bitkey("countforum", counter),
+                    counttext=_bitmap_handler.check_key_in_bitkey("counttext", counter),
+                    countvoice=_bitmap_handler.check_key_in_bitkey("countvoice", counter),
+                    countcategory=_bitmap_handler.check_key_in_bitkey("countcategory", counter),
+                    countstage=_bitmap_handler.check_key_in_bitkey("countstage", counter),
+                    countforum=_bitmap_handler.check_key_in_bitkey("countforum", counter),
+                )
+                prefix_with_space = prefix + " " if prefix else ""
+                created_channel = await guild.create_voice_channel(
+                    name=f"{prefix_with_space}{channels_in_guild}",
+                    category=category,
+                    overwrites={guild.default_role: _overwrites},
                 )
 
-        _c.execute(
-            "UPDATE `STATDOCK` SET `last_updated` = ?, `channel_id` = ?, enabled = 1 WHERE `channel_id` = ?",
-            (
-                int(time()),
-                created_channel.id,
-                channel_id,
-            ),
-        )
-        _conn.commit()
+        if created_channel:
+            _c.execute(
+                "UPDATE `STATDOCK` SET `last_updated` = ?, `channel_id` = ?, enabled = 1 WHERE `channel_id` = ?",
+                (
+                    int(time()),
+                    created_channel.id,
+                    channel_id,
+                ),
+            )
+            _conn.commit()
     except Exception as e:
         _logger.warning(e)
 
@@ -375,10 +402,12 @@ async def _update_dock(
     prefix,
 ) -> Optional[bool]:
     # Updates a dock.
-    channel: discord.VoiceChannel = await _get_or_fetch("channel", channel_id)
-    guild: discord.Guild = await _get_or_fetch("guild", guild_id)
-    stat_type = _bitmap.get_active_keys(stat_type, single=True)
-    if not channel or not guild:
+    if _conn is None:
+        raise ValueError("Database connection is not initialized.")
+    channel_result = await _get_or_fetch("channel", channel_id)
+    guild_result = await _get_or_fetch("guild", guild_id)
+    stat_type = _bitmap_handler.get_active_keys(stat_type, single=True)
+    if not channel_result or not guild_result:
         if not enabled:
             _c.execute("DELETE FROM `STATDOCK` WHERE `channel_id` = ?", (channel_id,))
             _conn.commit()
@@ -388,7 +417,7 @@ async def _update_dock(
                 guild_id=guild_id,
                 category_id=category_id,
                 channel_id=channel_id,
-                stat_type=stat_type,
+                stat_type=stat_type,  # type: ignore[arg-type]
                 timezone=timezone,
                 timeformat=timeformat,
                 counter=counter,
@@ -396,36 +425,45 @@ async def _update_dock(
                 prefix=prefix,
             )
     else:
+        # Type narrow to ensure we have the correct types
+        channel = channel_result
+        guild = guild_result
+        assert isinstance(channel, discord.VoiceChannel)
+        assert isinstance(guild, discord.Guild)
+        
         try:
             new_name = None
             match stat_type:
                 case "time":
                     new_name = f"{prefix + ' ' if prefix else ''}{_get_current_time(timezone=timezone, time_format=timeformat)}"
                 case "role":
-                    role: discord.Role = guild.get_role(role_id)
+                    role: Optional[discord.Role] = guild.get_role(role_id)
+                    if role is None:
+                        _logger.warning(f"Role {role_id} not found in guild {guild_id}")
+                        return
                     members_in_role = await _count_members_by_role(
                         role=role,
-                        countbots=_bitmap.check_key_in_bitkey("countbots", counter),
-                        countusers=_bitmap.check_key_in_bitkey("countusers", counter),
+                        countbots=_bitmap_handler.check_key_in_bitkey("countbots", counter),
+                        countusers=_bitmap_handler.check_key_in_bitkey("countusers", counter),
                     )
                     new_name = f"{prefix + ' ' if prefix else ''}{members_in_role}"
                 case "member":
                     members_in_guild = await _count_members_in_guild(
                         guild=guild,
-                        countbots=_bitmap.check_key_in_bitkey("countbots", counter),
-                        countusers=_bitmap.check_key_in_bitkey("countusers", counter),
+                        countbots=_bitmap_handler.check_key_in_bitkey("countbots", counter),
+                        countusers=_bitmap_handler.check_key_in_bitkey("countusers", counter),
                     )
                     new_name = f"{prefix + ' ' if prefix else ''}{members_in_guild}"
                 case "channel":
                     channels_in_guild = await _count_channels_in_guild(
                         guild=guild,
-                        counttext=_bitmap.check_key_in_bitkey("counttext", counter),
-                        countvoice=_bitmap.check_key_in_bitkey("countvoice", counter),
-                        countcategory=_bitmap.check_key_in_bitkey(
+                        counttext=_bitmap_handler.check_key_in_bitkey("counttext", counter),
+                        countvoice=_bitmap_handler.check_key_in_bitkey("countvoice", counter),
+                        countcategory=_bitmap_handler.check_key_in_bitkey(
                             "countcategory", counter
                         ),
-                        countstage=_bitmap.check_key_in_bitkey("countstage", counter),
-                        countforum=_bitmap.check_key_in_bitkey("countforum", counter),
+                        countstage=_bitmap_handler.check_key_in_bitkey("countstage", counter),
+                        countforum=_bitmap_handler.check_key_in_bitkey("countforum", counter),
                     )
                     new_name = f"{prefix + ' ' if prefix else ''}{channels_in_guild}"
             if new_name and channel.name != new_name:
@@ -582,7 +620,7 @@ async def _statdock_type_change(interaction, timezone, time_format):
         discord.app_commands.Choice(name="Member", value="member"),
         discord.app_commands.Choice(name="Channel counter", value="channel"),
     ],
-    frequency=[
+    frequency=[  # type: ignore[arg-type]
         discord.app_commands.Choice(name="6 minutes", value=6),
         discord.app_commands.Choice(name="10 minutes", value=10),
         discord.app_commands.Choice(name="15 minutes", value=15),
@@ -820,9 +858,14 @@ async def _statdock_list(interaction: discord.Interaction) -> None:
 
     embeds = []
     for entry in data:
-        count_type = _bitmap.get_active_keys(entry[5], single=True)
+        count_type = _bitmap_handler.get_active_keys(entry[5], single=True)
         embed_color = discord.Color.green() if entry[1] else discord.Color.red()
-        embed_title = f"Embed ID: {entry[0]} - {count_type.capitalize()}"
+        # Handle the case where count_type might be a list
+        if isinstance(count_type, list):
+            count_type_str = count_type[0] if count_type else "unknown"
+        else:
+            count_type_str = count_type
+        embed_title = f"Embed ID: {entry[0]} - {count_type_str.capitalize()}"
 
         embed = discord.Embed(title=embed_title, color=embed_color)
         embed.add_field(name="Channel", value=f"<#{entry[4]}>")
@@ -834,11 +877,11 @@ async def _statdock_list(interaction: discord.Interaction) -> None:
             case ["member", "role"]:
                 embed.add_field(
                     name="Count Members",
-                    value=_bitmap.check_key_in_bitkey("countusers", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countusers", entry[12]),
                 )
                 embed.add_field(
                     name="Count Bots",
-                    value=_bitmap.check_key_in_bitkey("countbots", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countbots", entry[12]),
                 )
                 if count_type == "role":
                     role = interaction.guild.get_role(entry[8])
@@ -850,23 +893,23 @@ async def _statdock_list(interaction: discord.Interaction) -> None:
             case "channel":
                 embed.add_field(
                     name="Count Text",
-                    value=_bitmap.check_key_in_bitkey("counttext", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("counttext", entry[12]),
                 )
                 embed.add_field(
                     name="Count Voice",
-                    value=_bitmap.check_key_in_bitkey("countvoice", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countvoice", entry[12]),
                 )
                 embed.add_field(
                     name="Count Category",
-                    value=_bitmap.check_key_in_bitkey("countcategory", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countcategory", entry[12]),
                 )
                 embed.add_field(
                     name="Count Stage",
-                    value=_bitmap.check_key_in_bitkey("countstage", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countstage", entry[12]),
                 )
                 embed.add_field(
                     name="Count Forum",
-                    value=_bitmap.check_key_in_bitkey("countforum", entry[12]),
+                    value=_bitmap_handler.check_key_in_bitkey("countforum", entry[12]),
                 )
 
         embeds.append(embed)
@@ -901,11 +944,17 @@ async def _statdock_enable_hidden(interaction: discord.Interaction) -> None:
         channel = interaction.guild.get_channel(entry[4])
         if channel is not None:
             continue
+        stat_type_result = _bitmap_handler.get_active_keys(entry[5], single=True)
+        # Ensure stat_type is a string
+        if isinstance(stat_type_result, list):
+            stat_type_str = stat_type_result[0] if stat_type_result else ""
+        else:
+            stat_type_str = stat_type_result
         await _re_init_dock(
             guild_id=interaction.guild.id,
             category_id=entry[3],
             channel_id=entry[4],
-            stat_type=_bitmap.get_active_keys(entry[5], single=True),
+            stat_type=stat_type_str,
             timezone=entry[6],
             timeformat=entry[7],
             counter=entry[12],

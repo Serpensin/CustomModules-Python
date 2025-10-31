@@ -380,7 +380,7 @@ class PostgreSQLBackend(BaseDatabaseBackend):
 
         # Try asyncpg first, fall back to psycopg
         try:
-            import asyncpg
+            import asyncpg  # type: ignore[import-not-found]
 
             self.driver = "asyncpg"
             self.pool = await asyncpg.create_pool(
@@ -956,9 +956,10 @@ class AsyncDatabaseHandler:
         backend_class = cls.BACKENDS[db_type]
 
         # Pass pool parameters to backends that support it
+        backend: BaseDatabaseBackend
         if db_type in ("mysql", "mariadb", "postgresql"):
             backend = backend_class(
-                logger, pool_minsize=pool_minsize, pool_maxsize=pool_maxsize
+                logger, pool_minsize=pool_minsize, pool_maxsize=pool_maxsize  # type: ignore[call-arg]
             )
         else:
             backend = backend_class(logger)
