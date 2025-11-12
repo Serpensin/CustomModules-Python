@@ -2,9 +2,71 @@ import logging
 import logging.handlers
 import os
 import threading
+from collections import deque
 from typing import Optional
 
 from colorama import Fore, Style, init
+
+
+class _BufferedTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
+    """
+    A TimedRotatingFileHandler that buffers log records in RAM during rotation.
+    
+    This prevents issues with concurrent writes during file rotation by temporarily
+    storing incoming log records in a deque buffer while the rotation is in progress.
+    """
+
+    def __init__(self, *args, log_manager=None, **kwargs):
+        """
+        Initialize the buffered handler.
+        
+        Args:
+            *args: Positional arguments passed to TimedRotatingFileHandler.
+            log_manager (LogManager): Reference to the LogManager for accessing buffer state.
+            **kwargs: Keyword arguments passed to TimedRotatingFileHandler.
+        """
+        super().__init__(*args, **kwargs)
+        self.log_manager = log_manager
+
+    def emit(self, record):
+        """
+        Emit a record, buffering it if rotation is in progress.
+        
+        Args:
+            record (logging.LogRecord): The log record to emit.
+        """
+        if self.log_manager and self.log_manager.buffer_logs_during_rotation:
+            # Check if rotation is in progress
+            if self.log_manager._rotation_in_progress:
+                # Buffer the record instead of writing it
+                self.log_manager._log_buffer.append(record)
+                return
+        
+        # Normal emit
+        super().emit(record)
+
+    def doRollover(self):
+        """
+        Perform a rollover, buffering incoming logs during the process.
+        """
+        if self.log_manager and self.log_manager.buffer_logs_during_rotation:
+            # Signal that rotation is starting
+            self.log_manager._rotation_in_progress = True
+            
+            try:
+                # Perform the actual rotation
+                super().doRollover()
+            finally:
+                # Signal that rotation is complete
+                self.log_manager._rotation_in_progress = False
+                
+                # Flush buffered logs
+                while self.log_manager._log_buffer:
+                    buffered_record = self.log_manager._log_buffer.popleft()
+                    super().emit(buffered_record)
+        else:
+            # No buffering, perform normal rotation
+            super().doRollover()
 
 
 class LogManager:
@@ -16,6 +78,7 @@ class LogManager:
         app_folder_name (str): The name of the application, used for naming the log file.
         log_level (int): The logging level (e.g., logging.INFO).
         logger (logging.Logger): Optional logger for meta-logging LogManager operations.
+        buffer_logs_during_rotation (bool): If True, logs are buffered in RAM during rotation.
     """
 
     def __init__(
@@ -24,6 +87,7 @@ class LogManager:
         app_folder_name,
         log_level="INFO",
         logger: Optional[logging.Logger] = None,
+        buffer_logs_during_rotation: bool = True,
     ):
         """
         Initializes the LogManager with the specified log folder, application folder name, and log level.
@@ -34,6 +98,8 @@ class LogManager:
             log_level (str): The log level as a string (e.g., 'INFO', 'DEBUG').
             logger (Optional[logging.Logger]): Parent logger for meta-logging LogManager operations.
             If provided, creates a child logger under CustomModules.LogHandler. Defaults to None.
+            buffer_logs_during_rotation (bool): If True, incoming logs are buffered in RAM during
+            file rotation to prevent issues. Defaults to True.
         """
         init()  # Initialize colorama for colored console output.
 
@@ -51,6 +117,9 @@ class LogManager:
         self.app_folder_name = app_folder_name
         self.log_level = self._get_log_level(log_level)
         self._lock = threading.Lock()  # Thread-safety lock for handler operations
+        self.buffer_logs_during_rotation = buffer_logs_during_rotation
+        self._rotation_in_progress = False
+        self._log_buffer = deque()  # Buffer for logs during rotation
 
         self.logger.info(f"LogManager initialized with log level {log_level}")
 
@@ -96,13 +165,14 @@ class LogManager:
             )
             return logger
 
-        # Create a file handler that rotates logs at midnight
-        file_handler = logging.handlers.TimedRotatingFileHandler(
+        # Create a file handler that rotates logs at midnight with buffering support
+        file_handler = _BufferedTimedRotatingFileHandler(
             filename=os.path.join(self.log_folder, f"{self.app_folder_name}.log"),
             when="midnight",
             encoding="utf-8",
             backupCount=27,
             delay=True,
+            log_manager=self,
         )
 
         # Customize rotation naming: NAME.DATUM.log instead of NAME.log.DATUM
