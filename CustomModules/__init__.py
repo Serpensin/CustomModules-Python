@@ -20,7 +20,7 @@ Available modules:
 - twitch: Twitch API integration
 """
 
-__version__ = "3.1.0"
+__version__ = "3.1.1"
 __author__ = "Serpensin"
 __license__ = "AGPL-3.0"
 

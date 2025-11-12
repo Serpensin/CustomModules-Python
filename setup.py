@@ -49,6 +49,7 @@ extras_require = {
     ],
     "libretrans": [
         DEP_AIOHTTP,
+        "aiofiles>=25.1.0",
     ],
     "loghandler": [
         "colorama>=0.4.6",
@@ -89,7 +90,7 @@ extras_require["all"] = sorted(all_deps)
 
 setup(
     name="CustomModules",
-    version="3.1.0",
+    version="3.1.1",
     author="Serpensin",
     description="A collection of custom Python modules for Discord bots and utilities",
     long_description=read_file("README.md"),
