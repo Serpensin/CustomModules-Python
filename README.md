@@ -9,14 +9,6 @@
 
 A collection of custom Python modules for Discord bots and various utilities.
 
-## ✨ What's New in v2.0.2
-
-- **Universal Logger Support**: All modules now support optional logger parameter with hierarchical child logger pattern
-- **Improved Security**: Fixed dependency issues and passed all Snyk security scans
-- **Code Quality**: Achieved 10/10 pylint score with black formatting and flake8 compliance
-
-## Installation
-
 Install the base package:
 ```bash
 pip install CustomModules

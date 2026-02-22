@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "CustomModules"
-version = "3.1.1"
+version = "3.1.2"
 authors = [
     {name = "Serpensin"},
 ]
@@ -36,4 +36,4 @@ Source = "https://github.com/Serpensin/CustomModules-Python"
 packages = ["CustomModules"]
 
 [tool.setuptools.package-data]
-CustomModules = ["*.txt", "*.md"]
+CustomModules = ["*.txt", "*.md", "*.pyi"]

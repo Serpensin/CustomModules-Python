@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from google.auth.exceptions import RefreshError
-from google.cloud import translate_v2
+from google.cloud.translate_v2 import Client
 
 
 class API:
@@ -39,7 +39,7 @@ class API:
 
         self.credentials_path = credentials_path
         try:
-            self.translate_client = translate_v2.Client.from_service_account_json(
+            self.translate_client = Client.from_service_account_json(
                 self.credentials_path
             )
             self.logger.debug("Successfully created translate client")

@@ -1,0 +1,26 @@
+"""Type stubs for twitch module."""
+import logging
+from typing import Optional, Union
+
+class TwitchAPI:
+    client_id: str
+    client_secret: str
+    access_token: str
+    streams: str
+    users: str
+    top: str
+    logger: logging.Logger
+
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        logger: Optional[logging.Logger] = None
+    ) -> None: ...
+    def get_twitch_app_access_token(self) -> Union[str, int]: ...
+    async def check_access_token(self) -> bool: ...
+    async def get_game_id(self, game_name: str) -> str: ...
+    async def get_category_stats(self, category_id: str) -> Union[dict, int, None]: ...
+    async def get_top_streamers(self, category_id: str) -> Union[dict, str]: ...
+    async def get_api_points(self) -> int: ...
+    async def get_category_image(self, category_id: str) -> str: ...

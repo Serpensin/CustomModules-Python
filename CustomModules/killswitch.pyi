@@ -1,0 +1,6 @@
+"""Type stubs for killswitch module."""
+import logging
+from typing import Optional
+
+def set_logger(logger: Optional[logging.Logger] = None) -> None: ...
+async def get_killswitch(return_type: str = "html") -> str | None: ...

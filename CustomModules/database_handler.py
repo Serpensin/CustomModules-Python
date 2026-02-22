@@ -441,7 +441,7 @@ class _MySQLSyncBackend(_BaseDatabaseBackend):
             host=connection_params.get("host", "localhost"),
             port=connection_params.get("port", 3306),
             user=connection_params.get("user"),
-            password=connection_params.get("password"),
+            password=connection_params.get("password", ""),
             database=connection_params.get("database"),
             autocommit=False,
             cursorclass=pymysql.cursors.DictCursor,
@@ -1516,7 +1516,7 @@ class AsyncDatabaseHandler:
 
         if db_type in ("mysql", "mariadb", "postgresql"):
             backend = backend_class(
-                logger, pool_minsize=pool_minsize, pool_maxsize=pool_maxsize
+                logger, pool_minsize=pool_minsize, pool_maxsize=pool_maxsize  # type: ignore[call-arg]
             )
         else:
             backend = backend_class(logger)

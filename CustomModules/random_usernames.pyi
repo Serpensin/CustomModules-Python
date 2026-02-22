@@ -1,0 +1,6 @@
+"""Type stubs for random_usernames module."""
+import logging
+from typing import Optional
+
+def set_logger(logger: Optional[logging.Logger] = None) -> None: ...
+def generate_username(separator: str = "", capitalize: bool = False) -> str: ...

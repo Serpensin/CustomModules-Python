@@ -295,6 +295,8 @@ if __name__ == "__main__":
                 )
             )
             print(asyncio.run(api.get_app_details(570)))
+            owns_game = asyncio.run(api.owns_game("76561197969978546", 570))
+            print(f"Owns game: {owns_game}")
         except Errors.Private as e:
             print(e)
     print(asyncio.run(get_free_promotions()))

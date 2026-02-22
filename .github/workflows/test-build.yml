@@ -42,36 +42,20 @@ jobs:
     - name: Test package installation
       shell: bash
       run: |
-        # Find the wheel file
         WHEEL_FILE=$(ls dist/*.whl | head -n 1)
         echo "Installing $WHEEL_FILE"
         pip install "$WHEEL_FILE"
-        
-        # Test that the package is installed
         python -c "import CustomModules; print(f'CustomModules version: {CustomModules.__version__}')"
-        
-        # List what modules are available (without importing them to avoid dependency issues)
         python -c "import CustomModules; import pkgutil; mods = [m.name for m in pkgutil.iter_modules(CustomModules.__path__)]; print(f'Available modules: {mods}')"
 
     - name: Test install with extras
       shell: bash
       run: |
-        # Uninstall the base package first
         pip uninstall -y custommodules
-        
-        # Find the wheel file and install with all extras
         WHEEL_FILE=$(ls dist/*.whl | head -n 1)
         pip install "${WHEEL_FILE}[all]"
-        
-        # Test that package can be imported (may fail if optional dependencies have issues)
-        echo "Testing basic package import..."
         python -c "import CustomModules; print(f'CustomModules version: {CustomModules.__version__}')" || echo "Warning: Package import had issues"
-        
-        # Try importing modules with installed dependencies (non-fatal)
-        echo "Testing log_handler import..."
         python -c "from CustomModules.log_handler import LogManager; print('LogManager imported successfully')" || echo "Warning: log_handler import failed"
-        
-        echo "Testing database_handler import..."
         python -c "from CustomModules.database_handler import SyncDatabaseHandler, AsyncDatabaseHandler; print('DatabaseHandler imported successfully')" || echo "Warning: database_handler import failed"
 
     - name: List installed packages
@@ -84,3 +68,81 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
+
+  typecheck:
+    name: Test type stubs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build pyright
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Install package
+      run: |
+        pip install dist/*.whl
+
+    - name: Create test file
+      run: |
+        printf '%s\n' \
+          'import CustomModules' \
+          'from CustomModules.steam import API as SteamAPI, Errors as SteamErrors' \
+          'from CustomModules.twitch import TwitchAPI' \
+          'from CustomModules.database_handler import AsyncDatabaseHandler, SyncDatabaseHandler, SQLiteDatabaseHandler' \
+          '' \
+          '# SteamAPI methods' \
+          'steam_api: SteamAPI = SteamAPI("test_key")  # type: ignore' \
+          '' \
+          '# These should be caught by type checker if stubs are working' \
+          'result: bool = await steam_api.owns_game("steamid", 123)  # type: ignore' \
+          'result_wrong: bool = await steam_api.ownsGame("steamid", 123)  # Should error: ownsGame does not exist' \
+          '' \
+          '# TwitchAPI' \
+          'twitch: TwitchAPI = TwitchAPI("client_id", "client_secret")  # type: ignore' \
+          'game_id: str = await twitch.get_game_id("Game")  # type: ignore' \
+          > test_stubs.py
+
+    - name: Create check script
+      run: |
+        printf '%s\n' \
+          'import json' \
+          'import sys' \
+          '' \
+          'with open('"'"'pyright_output.json'"'"') as f:' \
+          '    data = json.load(f)' \
+          '' \
+          'errors = data.get('"'"'generalDiagnostics'"'"', [])' \
+          'stub_errors = [e for e in errors if '"'"'ownsGame'"'"' in e.get('"'"'message'"'"', '"'"''"'"')]' \
+          '' \
+          'if stub_errors:' \
+          '    print('"'"'SUCCESS: Type checker correctly identified ownsGame as invalid!'"'"')' \
+          '    for e in stub_errors:' \
+          '        line = e.get('"'"'range'"'"', {}).get('"'"'start'"'"', {}).get('"'"'line'"'"', 0) + 1' \
+          '        msg = e.get('"'"'message'"'"', '"'"''"'"')' \
+          '        print(f'"'"'  Line {line}: {msg}'"'"')' \
+          '    sys.exit(0)' \
+          'else:' \
+          '    print('"'"'FAILURE: Type checker did not catch the invalid method name'"'"')' \
+          '    print('"'"'Expected error about ownsGame not existing'"'"')' \
+          '    sys.exit(1)' \
+          > check_stubs.py
+
+    - name: Run pyright
+      run: |
+        pyright test_stubs.py --outputjson 2>&1 | tee pyright_output.json || true
+
+    - name: Check for stub errors
+      run: |
+        python check_stubs.py
