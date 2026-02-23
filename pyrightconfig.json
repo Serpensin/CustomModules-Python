@@ -1,6 +1,4 @@
 {
-    "venv": ".venv",
-    "venvPath": ".",
     "include": ["CustomModules"],
     "exclude": ["CustomModules/__pycache__", "**/__pycache__"],
     "typeCheckingMode": "standard",
